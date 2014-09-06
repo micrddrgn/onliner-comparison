@@ -36,9 +36,9 @@
           for (var i = 0; i < data.length; i++) {
             that.add(data[i], true);
           }
+
+          that.updateCompareUrl();
         });
-        
-        this.updateCompareUrl();
       },
       add: function(product, silent) {
         silent = silent || false;
