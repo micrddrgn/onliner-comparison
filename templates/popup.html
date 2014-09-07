@@ -1,72 +1,22 @@
 <!doctype html>
 <html>
   <head>
-    <title>Onliner comparison</title>
+    <title>Onliner - сравнение товаров</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-
-      body {
-        font-family: Verdana, Tahoma, Geneva;
-        font-size: 10px;
-        width: 300px;
-      }
-
-      a {
-        color: #034B83;
-        text-decoration: none;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-
-      ul.products {
-        position: relative;
-        list-style-type: none;
-        margin: 0px;
-        padding: 0px;
-        border-top: 2px solid #CCC;
-        border-bottom: 1px solid #CCC;
-        margin: 10px 0px;
-      }
-
-      ul.products li {
-        position: relative;
-        margin-top: 10px;
-        border-bottom: 1px solid #CCC;
-        display: inline-block;
-      }
-
-      ul.products li img {
-        max-width: 80px;
-        max-height: 80px;
-        margin: 5px 10px 5px 0px;
-      }
-
-      ul.products li button.remove {
-        position: absolute;
-        top: 0px;
-        right: 0px;
-        margin: -5px 0px 0px 0px;
-      }
-
-      a.compare {
-        font-size: 12px;
-        font-weight: bold;
-      }
-
-    </style>
-
     <!--
       - JavaScript and HTML must be in separate files: see our Content Security
       - Policy documentation[1] for details and explanation.
       -
       - [1]: http://developer.chrome.com/extensions/contentSecurityPolicy.html
      -->
-    <script src="popup.js"></script>
+     <link rel="stylesheet" href="../stylesheets/popup.css">
+     <link rel="stylesheet" href="../stylesheets/button.css">
+
+    <script src="../javascripts/popup.js"></script>
   </head>
   <body>
     
-    <button class="add" title="Добавить для сравнения">+ Добавить</button>
+    <button class="onliner-comparison-extension-popup-add-button" title="Добавить для сравнения">+ Добавить</button>
 
     <ul class="products">
       <!--

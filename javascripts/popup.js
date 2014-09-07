@@ -1,15 +1,4 @@
 (function() {
-  // var validUrlRegExp = new RegExp('http://catalog.onliner.by/[a-zA-Z0-9_]+/[a-zA-Z0-9_]+');
-
-  // chrome.tabs.query({ active: true, lastFocusedWindow: true }, function(tabs) {
-
-    // var url = tabs[0].url;
-
-    // console.log(tabs);
-    // console.log(tabs[0].url);
-
-    // console.log(url);
-  // });
 
   document.addEventListener('DOMContentLoaded', function() {
 
@@ -18,7 +7,7 @@
 
     var dom = {
       compareLink: document.querySelector('.compare'),
-      addButton: document.querySelector('.add'),
+      addButton: document.querySelector('.onliner-comparison-extension-popup-add-button'),
       list: document.querySelector('.products')
     };
 
@@ -32,9 +21,10 @@
         var that = this;
 
         chrome.storage.local.get(null, function(data) {
-          data = data.products;
-          for (var i = 0; i < data.length; i++) {
-            that.add(data[i], true);
+
+          var list = data.products;
+          for (var i = 0; i < list.length; i++) {
+            that.add(list[i], true);
           }
 
           that.updateCompareUrl();
@@ -114,11 +104,10 @@
     dom.addButton.addEventListener('click', function() {
 
       chrome.tabs.executeScript(null, {
-        file: 'inject.js'
+        file: 'javascripts/inject.js'
       });
 
     });
-
 
     chrome.extension.onMessage.addListener(function(request, sender) {
       if (request.action == 'parseProduct') {

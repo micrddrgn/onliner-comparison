@@ -1,0 +1,13 @@
+.onliner-comparison-extension-popup-add-button,
+.onliner-comparison-extension-technical-page-add-button {
+  background: url('chrome-extension://oibaoljchkgjpfnanpkbdhbbjadipmic/images/icons/16.png') no-repeat;
+  cursor: pointer;
+  font: 10px Tahoma,Verdana,Arial,sans-serif;
+  padding-left: 20px;
+  border: 1px outset;
+  height: 16px;
+}
+
+.onliner-comparison-extension-technical-page-add-button {
+  margin: 3px 10px 0px 20px;
+}

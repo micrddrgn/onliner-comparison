@@ -1,0 +1,48 @@
+body {
+  font-family: Verdana, Tahoma, Geneva;
+  font-size: 10px;
+  width: 300px;
+}
+
+a {
+  color: #034B83;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+ul.products {
+  position: relative;
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+  border-top: 2px solid #CCC;
+  border-bottom: 1px solid #CCC;
+  margin: 10px 0px;
+}
+
+ul.products li {
+  position: relative;
+  margin-top: 10px;
+  border-bottom: 1px solid #CCC;
+  display: inline-block;
+}
+
+ul.products li img {
+  max-width: 80px;
+  max-height: 80px;
+  margin: 5px 10px 5px 0px;
+}
+
+ul.products li button.remove {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  margin: -5px 0px 0px 0px;
+}
+
+a.compare {
+  font-size: 12px;
+  font-weight: bold;
+}
