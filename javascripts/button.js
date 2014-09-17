@@ -34,6 +34,12 @@ button.addEventListener('click', function() {
   chrome.storage.local.get(null, function(data) {
     var list = data.products;
 
+    for (var i in list) {
+      if (list[i].id === product.id) {
+        return false;
+      }
+    }
+
     list.push(product);
 
     chrome.storage.local.set({ products: list });
