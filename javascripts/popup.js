@@ -34,6 +34,12 @@
         silent = silent || false;
         var that = this;
 
+        for (var i in this.list) {
+          if (this.list[i].id === product.id) {
+            return false;
+          }
+        }
+
         this.list.push(product);
 
         var listItem = document.createElement('li');
