@@ -1,126 +1,109 @@
-(function() {
+// this script will run any time user opens a popup
 
-  document.addEventListener('DOMContentLoaded', function() {
+// shortcut for sending a message
+function sendMessage(action, data, callback) {
+  var message = { action: action, source: 'popup', data: data };
+  chrome.extension.sendMessage(message, callback);
+}
 
-    var compareUrl = 'http://catalog.onliner.by/compare/';
-    var compareUrlDelimiter = '+';
+document.addEventListener('DOMContentLoaded', function() {
 
-    var dom = {
-      compareLink: document.querySelector('.compare'),
-      addButton: document.querySelector('.onliner-comparison-extension-popup-add-button'),
-      list: document.querySelector('.products')
-    };
+  // base url for comparison
+  var compareUrl = 'http://catalog.onliner.by/compare/';
+  // products ids delimiter in compare url
+  var compareUrlDelimiter = '+';
 
-    var templates = {
-      item: '<img src="" title="" alt="" align="left"><a href="" target="_blank" title="Открыть в новой вкладке"></a><p></p><button class="remove" title="Удалить из сравнения">&#10006;</button>'
-    };
+  var domElements = {
+    compareLink: document.querySelector('.compare'),
+    addButton: document.querySelector('.onliner-comparison-extension-popup-add-button'),
+    list: document.querySelector('.products')
+  };
 
-    var products = {
-      list: [],
-      load: function() {
-        var that = this;
+  // template for a single product list item
+  var templates = {
+    product: '<img src="" title="" alt="" align="left"><a href="" target="_blank" title="Открыть в новой вкладке"></a><p></p><button class="remove" title="Удалить из сравнения">&#10006;</button>'
+  };
 
-        chrome.storage.local.get(null, function(data) {
+  var viewManager = {
 
-          var list = data.products;
-          for (var i = 0; i < list.length; i++) {
-            that.add(list[i], true);
+    // store ids of visible products
+    // used to build a compare url
+    ids: [],
+
+    add: function(product) {
+      var that = this;
+
+      var li = document.createElement('li');
+      li.className = 'product';
+      li.dataset.id = product.id;
+      li.innerHTML = templates.product;
+
+      var img = li.querySelector('img');
+      img.src = product.imageUrl;
+      img.title = img.alt = product.title;
+
+      var link = li.querySelector('a');
+      link.href = product.url;
+      link.innerHTML = product.title;
+
+      var p = li.querySelector('p');
+      p.innerHTML = product.description;
+
+      var button = li.querySelector('button');
+      button.addEventListener('click', function() {
+
+        var parent = this.parentNode;
+        var id = parent.dataset.id;
+
+        that.remove(id);
+
+      }, true);
+
+      domElements.list.appendChild(li);
+
+      // save added product id
+      this.ids.push(product.id);
+
+      this.updateCompareUrl();
+    },
+    remove: function(id) {
+      var that = this;
+
+      sendMessage('removeProduct', id, function(response) {
+        // if product is deleted
+        if (response === true) {
+          // remove item from popup
+          domElements.list.querySelector('[data-id="' + id + '"]').remove();
+
+          // and from ids
+          var index = that.ids.indexOf(id);
+          if (index !== -1) {
+            delete that.ids[index];
           }
 
           that.updateCompareUrl();
-        });
-      },
-      add: function(product, silent) {
-        silent = silent || false;
-        var that = this;
-
-        for (var i in this.list) {
-          if (this.list[i].id === product.id) {
-            return false;
-          }
         }
-
-        this.list.push(product);
-
-        var listItem = document.createElement('li');
-
-        listItem.className = 'product';
-        listItem.dataset.id = product.id;
-        listItem.innerHTML = templates.item;
-
-        var img = listItem.querySelector('img');
-        img.src = product.imageUrl;
-        img.title = img.alt = product.title;
-
-        var link = listItem.querySelector('a');
-        link.href = product.url;
-        link.innerHTML = product.title;
-
-        var p = listItem.querySelector('p');
-        p.innerHTML = product.description;
-
-        var button = listItem.querySelector('button');
-        button.addEventListener('click', function() {
-
-          var parent = this.parentNode;
-          var id = parent.dataset.id;
-
-          that.remove(id);
-
-        });
-
-        dom.list.appendChild(listItem);
-
-        if (silent === false) {
-          this.updateStorage();
-          this.updateCompareUrl();
-        }
-      },
-      remove: function(id) {
-
-        for(var i = 0; i < this.list.length; i++) {
-          if (this.list[i].id === id) {
-            this.list.splice(i, 1);
-            dom.list.querySelector('[data-id="' + id + '"]').remove();
-            break;
-          }
-        }
-
-        this.updateStorage();
-        this.updateCompareUrl();
-      },
-      updateCompareUrl: function() {
-
-        var ids = [];
-        for (var i = 0; i < this.list.length; i++) {
-          ids.push(this.list[i].id);
-        }
-
-        var productsStr = ids.join(compareUrlDelimiter);
-        dom.compareLink.href = compareUrl + productsStr;
-      },
-      updateStorage: function() {
-        chrome.storage.local.set({ products: this.list }, function() {});
-      }
-    };
-
-
-    products.load();
-
-    dom.addButton.addEventListener('click', function() {
-
-      chrome.tabs.executeScript(null, {
-        file: 'javascripts/inject.js'
       });
+    },
+    updateCompareUrl: function() {
+      var productsStr = this.ids.join(compareUrlDelimiter);
+      domElements.compareLink.href = compareUrl + productsStr;
+    }
+        
+  };
 
+  domElements.addButton.addEventListener('click', function() {
+    sendMessage('parseProduct', null, function(response) {
+      viewManager.add(response);
     });
+  }, true);
 
-    chrome.extension.onMessage.addListener(function(request, sender) {
-      if (request.action == 'parseProduct') {
-        products.add(request.source);
-      }
-    });
 
+  // load products when opening a popup
+  sendMessage('loadProducts', null, function(products) {
+    for (var i = 0; i < products.length; i++) {
+      viewManager.add(products[i]);
+    }
   });
-})();
 
+});

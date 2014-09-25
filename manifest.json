@@ -3,7 +3,7 @@
 
   "name": "Onliner - сравнение товаров",
   "description": "Сравнение товаров сайта catalog.onliner.by со страниц их технического описания",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "icons": {
     "16": "images/icons/16.png",
     "48": "images/icons/48.png",
@@ -21,10 +21,14 @@
   "content_scripts": [
     {
       "matches": ["http://catalog.onliner.by/*"],
-      "css": ["stylesheets/button.css"],
-      "js": ["javascripts/button.js"]
+      "css": ["stylesheets/content.css"],
+      "js": ["javascripts/content.js"]
     }
   ],
+  "background": {
+    "scripts": ["javascripts/event.js"],
+    "persistent": false
+  },
   "web_accessible_resources": [
     "images/icons/16.png"
   ]
