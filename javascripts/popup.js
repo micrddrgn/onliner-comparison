@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // and from ids
           var index = that.ids.indexOf(id);
           if (index !== -1) {
-            delete that.ids[index];
+            that.ids.splice(index, 1);
           }
 
           that.updateCompareUrl();
