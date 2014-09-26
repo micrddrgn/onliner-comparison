@@ -21,6 +21,7 @@ var storageManager = {
       products.push(product);
       chrome.storage.local.set({ products: products }, function() {
         sendResponse(product);
+        updateBadge(products.length);
       });
     });
   },
@@ -34,6 +35,7 @@ var storageManager = {
           chrome.storage.local.set({ products: products }, function() {
             // send positive response if product was deleted
             sendResponse(true);
+            updateBadge(products.length);
           });
           return;
         }
@@ -44,7 +46,9 @@ var storageManager = {
 
   load: function(sendResponse) {
     chrome.storage.local.get(null, function(storageData) {
-      sendResponse(storageData.products || []);
+      var products = storageData.products || [];
+      sendResponse(products);
+      updateBadge(products.length)
     });
   },
 
@@ -90,3 +94,16 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
   // message channel open to the other end until sendResponse is called).
   return true;
 });
+
+// set badge dafault color
+chrome.browserAction.setBadgeBackgroundColor({ color: '#F5291A' });
+
+// update badge counter on demand
+function updateBadge(value) {
+  // four characters is a maximum
+  var text = (value > 999) ? '999+' : value.toString();
+  chrome.browserAction.setBadgeText({ text: text });
+}
+
+// load items when extension is loaded so the badge will be up-to-date
+storageManager.load(function() {});
