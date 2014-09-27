@@ -43,6 +43,6 @@ ul.products li button.remove {
 }
 
 a.compare {
-  font-size: 12px;
-  font-weight: bold;
+  float: right;
+  margin-top: -5px;
 }
