@@ -107,3 +107,27 @@ function updateBadge(value) {
 
 // load items when extension is loaded so the badge will be up-to-date
 storageManager.load(function() {});
+
+// create context menu for "compare" page
+// adds functionality that allows users to remove items from compare table 
+// with no need to scroll down to the original buttons
+var contextMenuComparePageRemoveId = 'compare-page-context-menu-remove-id';
+
+chrome.contextMenus.create({
+  id: contextMenuComparePageRemoveId,
+  title: 'Удалить из сравнения',
+  contexts: ['page', 'selection', 'link', 'image'],
+  documentUrlPatterns: ['http://catalog.onliner.by/compare/*']
+}, function() {
+  // log error if failed to create context menu
+  console.error(chrome.runtime.lastError);
+});
+
+chrome.contextMenus.onClicked.addListener(function(info, tab) {
+  if (info.menuItemId === contextMenuComparePageRemoveId) {
+    var message = { action: 'removePageProduct', source: 'event', data: null };
+    chrome.tabs.sendMessage(tab.id, message, function(response) {
+      // do nothing on response
+    });
+  }
+});
