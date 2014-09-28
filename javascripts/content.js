@@ -34,13 +34,15 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 // attach custom button to a page
 
 var rateBlock = document.querySelector('.pprate');
+if (rateBlock !== null) {
 
-var button = document.createElement('button');
-button.className = 'onliner-comparison-extension-technical-page-add-button';
-button.innerHTML = 'Сравнить';
+  var button = document.createElement('button');
+  button.className = 'onliner-comparison-extension-technical-page-add-button';
+  button.innerHTML = 'Сравнить';
 
-rateBlock.appendChild(button);
+  rateBlock.appendChild(button);
 
-button.addEventListener('click', function() {
-  sendMessage('addProduct', parseProduct(), function(response) {});
-}, true);
+  button.addEventListener('click', function() {
+    sendMessage('addProduct', parseProduct(), function(response) {});
+  }, true);
+}
