@@ -16,12 +16,18 @@ document.addEventListener('DOMContentLoaded', function() {
   var domElements = {
     compareLink: document.querySelector('.compare'),
     addButton: document.querySelector('.onliner-comparison-extension-popup-add-button'),
-    list: document.querySelector('.products')
+    list: document.querySelector('.products'),
+    status: document.querySelector('.status')
   };
 
   // template for a single product list item
   var templates = {
     product: '<img src="" title="" alt="" align="left"><a href="" target="_blank" title="Открыть в новой вкладке"></a><p></p><button class="remove" title="Удалить из сравнения">&#10006;</button>'
+  };
+
+  var statuses = {
+    noItems: 'Товары для сравнения отсутствуют',
+    loading: 'Загрузка...'
   };
 
   var viewManager = {
@@ -65,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
       this.ids.push(product.id);
 
       this.updateCompareUrl();
+      this.hideStatus();
     },
     remove: function(id) {
       var that = this;
@@ -82,14 +89,23 @@ document.addEventListener('DOMContentLoaded', function() {
           }
 
           that.updateCompareUrl();
+          if (that.ids.length === 0) {
+            that.showStatus('noItems');
+          }
         }
       });
     },
     updateCompareUrl: function() {
       var productsStr = this.ids.join(compareUrlDelimiter);
       domElements.compareLink.href = compareUrl + productsStr;
-    }
-        
+    },
+    showStatus: function(type) {
+      domElements.status.innerHTML = statuses[type];
+      domElements.status.style.display = 'block';
+    },
+    hideStatus: function() {
+      domElements.status.style.display = 'none';
+    }  
   };
 
   domElements.addButton.addEventListener('click', function() {
@@ -101,8 +117,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // load products when opening a popup
   sendMessage('loadProducts', null, function(products) {
-    for (var i = 0; i < products.length; i++) {
-      viewManager.add(products[i]);
+    if (products.length > 0) {
+      for (var i = 0; i < products.length; i++) {
+        viewManager.add(products[i]);
+      }
+      viewManager.hideStatus();
+    } else {
+      viewManager.showStatus('noItems');
     }
   });
 

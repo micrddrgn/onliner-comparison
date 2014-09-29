@@ -17,8 +17,7 @@ ul.products {
   list-style-type: none;
   margin: 0px;
   padding: 0px;
-  border-top: 2px solid #CCC;
-  border-bottom: 1px solid #CCC;
+  border-top: 1px solid #CCC;
   margin: 10px 0px;
 }
 
@@ -40,6 +39,13 @@ ul.products li button.remove {
   top: 0px;
   right: 0px;
   margin: -5px 0px 0px 0px;
+}
+
+ul.products li.status {
+  margin-bottom: 10px;
+  border: none;
+  text-align: center;
+  display: block;
 }
 
 a.compare {
