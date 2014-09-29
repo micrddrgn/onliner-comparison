@@ -3,7 +3,7 @@
 
   "name": "Onliner - сравнение товаров",
   "description": "Сравнение товаров сайта catalog.onliner.by со страниц их технического описания",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "icons": {
     "16": "images/icons/16.png",
     "48": "images/icons/48.png",

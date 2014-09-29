@@ -39,6 +39,8 @@ ul.products li button.remove {
   top: 0px;
   right: 0px;
   margin: -5px 0px 0px 0px;
+  border: 1px outset;
+  background: #FFFFFF;
 }
 
 ul.products li.status {
