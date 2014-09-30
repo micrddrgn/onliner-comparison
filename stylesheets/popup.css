@@ -1,7 +1,8 @@
 body {
   font-family: Verdana, Tahoma, Geneva;
   font-size: 10px;
-  width: 300px;
+  width: 310px;
+  margin-right: 0px;
 }
 
 a {
@@ -18,7 +19,11 @@ ul.products {
   margin: 0px;
   padding: 0px;
   border-top: 1px solid #CCC;
-  margin: 10px 0px;
+  margin-top: 10px;
+  max-height: 400px;
+  overflow: hidden;
+  overflow-y: visible;
+  padding-right: 8px;
 }
 
 ul.products li {
@@ -50,7 +55,12 @@ ul.products li.status {
   display: block;
 }
 
+ul.products li:last-child {
+  border-bottom: 0px;
+}
+
 a.compare {
   float: right;
   margin-top: -5px;
+  margin-right: 2px;
 }
