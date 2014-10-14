@@ -1,3 +1,10 @@
+// shortcut for sending a message to a tab
+function sendTabMessage(request, callback) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, request, callback);
+  });
+}
+
 var storageManager = {
 
   add: function(product, sendResponse) {
@@ -52,6 +59,20 @@ var storageManager = {
     });
   },
 
+  find: function(id, sendResponse) {
+    chrome.storage.local.get(null, function(storageData) {
+      var products = storageData.products || [];
+      for (var i = 0; i < products.length; i++) {
+        if (products[i].id === id) {
+          sendResponse(products[i]);
+          return;
+        }
+      }
+      // return null if no product found
+      sendResponse(null);
+    });
+  },
+
   isValid: function(product) {
     return (product !== undefined && product.id);
   }
@@ -77,11 +98,18 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
           storageManager.add(response, sendResponse);
         });
       });
-
       break;
 
     case 'removeProduct':
       storageManager.remove(request.data, sendResponse);
+      // do this now without dependency on actual removing
+      sendTabMessage(request, function(response) {
+        // do nothing on response
+      });
+      break;
+
+    case 'findProduct':
+      storageManager.find(request.data, sendResponse);
       break;
 
     default:

@@ -45,6 +45,17 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 
     case 'parseProduct':
       sendResponse(parseProduct());
+      if (rateBlock !== null) {
+        button.classList.add('state-remove');
+        button.innerHTML = 'Удалить из сравнения &#10006;';
+      }
+      break;
+
+    case 'removeProduct':
+      if (rateBlock !== null) {
+        button.classList.remove('state-remove');
+        button.innerHTML = 'Добавить к сравнению';
+      }
       break;
 
     case 'removePageProduct':
@@ -101,14 +112,34 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 var rateBlock = document.querySelector('.pprate');
 if (rateBlock !== null) {
 
-  var button = document.createElement('button');
-  button.className = 'onliner-comparison-extension-technical-page-add-button';
-  button.innerHTML = 'Сравнить';
+  var product = parseProduct();
 
-  rateBlock.appendChild(button);
+  var button = document.createElement('button');
+  button.classList.add('onliner-comparison-extension-technical-page-add-button');  
+
+  sendMessage('findProduct', product.id, function(response) {
+    if (response === null) {
+      button.innerHTML = 'Добавить к сравнению';
+      button.classList.remove('state-remove');
+    } else {
+      button.classList.add('state-remove');
+      button.innerHTML = 'Удалить из сравнения &#10006;';
+    }
+    rateBlock.appendChild(button);
+  });
 
   button.addEventListener('click', function() {
-    sendMessage('addProduct', parseProduct(), function(response) {});
+    if (button.classList.contains('state-remove')) {
+      sendMessage('removeProduct', product.id, function(response) {
+        button.classList.remove('state-remove');
+        button.innerHTML = 'Добавить к сравнению';
+      });
+    } else {
+      sendMessage('addProduct', product, function(response) {
+        button.classList.add('state-remove');
+        button.innerHTML = 'Удалить из сравнения &#10006;';
+      });
+    }
   }, true);
 }
 
