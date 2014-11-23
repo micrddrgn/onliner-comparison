@@ -159,4 +159,69 @@ if (compareColumn !== null) {
     }
   }, true);
 
+  // for some reason table itself does not exist after page load
+  // maybe some javascript is involved
+  // so constantly try to get the table 
+  var compareTable;
+  function parseCompareTable() {
+    compareTable = document.querySelector('#rgMasterTable2');
+    if (!compareTable) {
+      setTimeout(parseCompareTable, 50);
+    } else {
+      // table has been found
+
+      var products = [];
+
+      // ignore first column, because it is not about productc
+      var startIndex = 1;
+
+      var tableBody = compareTable.children[0];
+      if (! tableBody) { return false };
+
+      var tableRowWithImages = tableBody.children[0],
+        tableRowWithTitles = tableBody.children[1];
+
+      // at least one product should exist
+      if (tableRowWithImages.children.length <= startIndex) {
+        return false;
+      }
+
+      for (var i = startIndex; i < tableRowWithImages.children.length; i++) {
+
+        var tableCellWithImage = tableRowWithImages.children[i],
+          tableCellWithTitle = tableRowWithTitles.children[i];
+
+        // bad thing is that comparison table does not have descriptions
+        var title = tableCellWithTitle.querySelector('a').innerHTML;
+        var url = tableCellWithImage.querySelector('a').href;
+        var imageUrl = tableCellWithImage.querySelector('img').src;
+        var id = url.split('/').filter(function(n) { return n; }).pop();  
+
+        var product = {
+          id: id,
+          url: url,
+          title: title,
+          imageUrl: imageUrl
+        };
+
+        products.push(product);
+      }
+
+      // at least on product should exist
+      if (products.length === 0) {
+        return false;
+      }
+
+      sendMessage('resetProducts', products, function(response) {
+        console.log('RESPONSE');
+      });
+    }
+  }
+
+  // if sync is enabled parse a comparison table for products
+  // and reset data in popup to have the same products
+  sendMessage('isEnabledSync', null, function(response) {
+    parseCompareTable();
+  });
+
 }

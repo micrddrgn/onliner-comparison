@@ -59,6 +59,46 @@ var storageManager = {
     });
   },
 
+  reset: function(products, sendResponse) {
+
+    console.log(products);
+
+    var filteredProducts = [];
+
+    outer:
+    for (var i = 0; i < products.length; i++) {
+
+      var product = products[i];
+
+      if (! this.isValid(product)) {
+        continue;
+      }
+
+      // do not add products which already exist
+      for (var j = 0; j < filteredProducts.length; j++) {
+        if (filteredProducts[j].id === product.id) {
+          // jump to a label, continue with new product
+          continue outer;
+        }
+      }
+
+      filteredProducts.push(product);
+    }
+
+    console.log(filteredProducts);
+
+    if (filteredProducts.length === 0) {
+      sendResponse(false);
+      return;
+    }
+
+    // override stored products
+    chrome.storage.local.set({ products: filteredProducts }, function() {
+      sendResponse(filteredProducts);
+      updateBadge(filteredProducts.length);
+    });
+  },
+
   find: function(id, sendResponse) {
     chrome.storage.local.get(null, function(storageData) {
       var products = storageData.products || [];
@@ -75,6 +115,23 @@ var storageManager = {
 
   isValid: function(product) {
     return (product !== undefined && product.id);
+  },
+
+  setOption: function(key, value, sendResponse) {
+    chrome.storage.local.get(null, function(storageData) {
+      var options = storageData.options || {};
+      options[key] = value;
+      chrome.storage.local.set({ options: options }, function() {
+        sendResponse(true);
+      });
+    });
+  },
+  getOption: function(key, defaultValue, sendResponse) {
+    chrome.storage.local.get(null, function(storageData) {
+      var options = storageData.options || {};
+      var value = (options[key] === undefined) ? defaultValue : options[key];
+      sendResponse(value);
+    });
   }
 };
 
@@ -86,6 +143,10 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 
     case 'loadProducts':
       storageManager.load(sendResponse);
+      break;
+
+    case 'resetProducts':
+      storageManager.reset(request.data, sendResponse);
       break;
 
     case 'addProduct':
@@ -110,6 +171,18 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 
     case 'findProduct':
       storageManager.find(request.data, sendResponse);
+      break;
+
+    case 'enableSync':
+      storageManager.setOption('sync', true, sendResponse);
+      break;
+
+    case 'disableSync':
+      storageManager.setOption('sync', false, sendResponse);
+      break;
+
+    case 'isEnabledSync':
+      storageManager.getOption('sync', false, sendResponse);
       break;
 
     default:
