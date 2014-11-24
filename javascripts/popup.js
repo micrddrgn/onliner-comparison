@@ -17,7 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
     compareLink: document.querySelector('.compare'),
     addButton: document.querySelector('.onliner-comparison-extension-popup-add-button'),
     list: document.querySelector('.products'),
-    status: document.querySelector('.status')
+    status: document.querySelector('.status'),
+    syncCheckbox: document.querySelector('.sync')
   };
 
   // template for a single product list item
@@ -53,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
       link.innerHTML = product.title;
 
       var p = li.querySelector('p');
-      p.innerHTML = product.description;
+      p.innerHTML = product.description || '(описание отсутствует)';
 
       var button = li.querySelector('button');
       button.addEventListener('click', function() {
@@ -114,6 +115,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }, true);
 
+  domElements.syncCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+      sendMessage('enableSync', null, function(response) {
+        // do nothing on response
+      });
+    } else {
+      sendMessage('disableSync', null, function(response) {
+        // do nothing on response
+      });
+    }
+  }, true);
+
 
   // load products when opening a popup
   sendMessage('loadProducts', null, function(products) {
@@ -125,6 +138,12 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       viewManager.showStatus('noItems');
     }
+  });
+
+  // load initial state of "sync" checkbox
+  sendMessage('isEnabledSync', null, function(response) {
+    var checked = !!response;
+    domElements.syncCheckbox.checked = checked;
   });
 
 });
