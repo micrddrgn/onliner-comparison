@@ -179,11 +179,35 @@ if (compareColumn !== null) {
       if (! tableBody) { return false };
 
       var tableRowWithImages = tableBody.children[0],
-        tableRowWithTitles = tableBody.children[1];
+        tableRowWithTitles = tableBody.children[1],
+        tableRowWithDescriptions = null;
 
       // at least one product should exist
       if (tableRowWithImages.children.length <= startIndex) {
         return false;
+      }
+
+      // get all cells from the first column
+      // and try to find a row with descriptions, it may not exist with some products
+      var tableFirstColumnCells = tableBody.querySelectorAll('tr td:nth-child(1)');
+      for (var i = 0; i < tableFirstColumnCells.length; i++) {
+        var tableCell = tableFirstColumnCells[i];
+
+        var cellLinks = tableCell.querySelectorAll('a');
+        if (cellLinks.length === 0) { continue; }
+
+        var link = cellLinks[cellLinks.length - 1];
+        if (!link) { continue; }
+
+        var title = link.text;
+
+        // try another cell if not succeeded
+        if (title.toLowerCase() !== 'описание') {
+          continue;
+        }
+
+        // index of a cell is the index of the row with descriptions
+        tableRowWithDescriptions = tableBody.children[i];
       }
 
       for (var i = startIndex; i < tableRowWithImages.children.length; i++) {
@@ -191,16 +215,22 @@ if (compareColumn !== null) {
         var tableCellWithImage = tableRowWithImages.children[i],
           tableCellWithTitle = tableRowWithTitles.children[i];
 
-        // bad thing is that comparison table does not have descriptions
         var title = tableCellWithTitle.querySelector('a').innerHTML;
         var url = tableCellWithImage.querySelector('a').href;
         var imageUrl = tableCellWithImage.querySelector('img').src;
-        var id = url.split('/').filter(function(n) { return n; }).pop();  
+        var id = url.split('/').filter(function(n) { return n; }).pop();
+        var description = '';
+
+        if (tableRowWithDescriptions) {
+          var tableCellWithDescription = tableRowWithDescriptions.children[i];
+          description = tableCellWithDescription.innerHTML;
+        }
 
         var product = {
           id: id,
           url: url,
           title: title,
+          description: description,
           imageUrl: imageUrl
         };
 
@@ -213,7 +243,7 @@ if (compareColumn !== null) {
       }
 
       sendMessage('resetProducts', products, function(response) {
-        console.log('RESPONSE');
+        // do nothing on response
       });
     }
   }
@@ -221,7 +251,10 @@ if (compareColumn !== null) {
   // if sync is enabled parse a comparison table for products
   // and reset data in popup to have the same products
   sendMessage('isEnabledSync', null, function(response) {
-    parseCompareTable();
+    var enabled = !!response;
+    if (enabled) {
+      parseCompareTable(); 
+    }
   });
 
 }

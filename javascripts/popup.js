@@ -118,11 +118,11 @@ document.addEventListener('DOMContentLoaded', function() {
   domElements.syncCheckbox.addEventListener('change', function() {
     if (this.checked) {
       sendMessage('enableSync', null, function(response) {
-        console.log('sync enabled');
+        // do nothing on response
       });
     } else {
       sendMessage('disableSync', null, function(response) {
-        console.log('sync disabled');
+        // do nothing on response
       });
     }
   }, true);
@@ -138,6 +138,12 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       viewManager.showStatus('noItems');
     }
+  });
+
+  // load initial state of "sync" checkbox
+  sendMessage('isEnabledSync', null, function(response) {
+    var checked = !!response;
+    domElements.syncCheckbox.checked = checked;
   });
 
 });

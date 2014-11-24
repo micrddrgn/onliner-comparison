@@ -61,8 +61,6 @@ var storageManager = {
 
   reset: function(products, sendResponse) {
 
-    console.log(products);
-
     var filteredProducts = [];
 
     outer:
@@ -84,8 +82,6 @@ var storageManager = {
 
       filteredProducts.push(product);
     }
-
-    console.log(filteredProducts);
 
     if (filteredProducts.length === 0) {
       sendResponse(false);
