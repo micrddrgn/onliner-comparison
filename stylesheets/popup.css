@@ -32,13 +32,19 @@ ul.products li {
   position: relative;
   margin-top: 10px;
   border-bottom: 1px solid #CCC;
-  display: inline-block;
 }
 
-ul.products li img {
-  max-width: 80px;
+ul.products li div.image {
+  width: 80px;
   max-height: 80px;
   margin: 5px 10px 5px 0px;
+  float: left;
+  text-align: center;
+}
+
+ul.products li div.image img {
+  max-width: 100%;
+  max-height: 80px;
 }
 
 ul.products li button.remove {
@@ -70,4 +76,8 @@ a.compare {
 label input[type="checkbox"] {
   vertical-align: middle;
   margin: -2px 0px 0px 0px;
+}
+
+div.clear {
+  clear: both;
 }

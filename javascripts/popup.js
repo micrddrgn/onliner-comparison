@@ -6,6 +6,20 @@ function sendMessage(action, data, callback) {
   chrome.extension.sendMessage(message, callback);
 }
 
+// truncate a string if limit of symbols was reached, end the string with a replacement
+function truncate(string, limit, replacement) {
+  return (string.length <= limit)
+    ? string
+    : string.slice(0, limit) + (replacement || '...');
+}
+
+// unescape string in case it has '&' as '&amp' in it and so on
+function html_unescape(string) {
+  var div = document.createElement('div');
+  div.innerHTML = string;
+  return div.firstChild.nodeValue;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
   // base url for comparison
@@ -23,7 +37,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // template for a single product list item
   var templates = {
-    product: '<img src="" title="" alt="" align="left"><a href="" target="_blank" title="Открыть в новой вкладке"></a><p></p><button class="remove" title="Удалить из сравнения">&#10006;</button>'
+    product:  '<div class="image">' +
+                '<img src="" title="" alt="">' +
+              '</div>' +
+              '<a href="" target="_blank" title=""></a>' +
+              '<p></p>' +
+              '<button class="remove" title="Удалить из сравнения">&#10006;</button>' +
+              '<div class="clear"></div>'
   };
 
   var statuses = {
@@ -45,13 +65,18 @@ document.addEventListener('DOMContentLoaded', function() {
       li.dataset.id = product.id;
       li.innerHTML = templates.product;
 
-      var img = li.querySelector('img');
+      var img = li.querySelector('div.image img');
       img.src = product.imageUrl;
       img.title = img.alt = product.title;
 
+      // unescape title in case it has '&', '>' in it
+      // to know exact string length before inserting
+      var title = html_unescape(product.title);
+
       var link = li.querySelector('a');
       link.href = product.url;
-      link.innerHTML = product.title;
+      link.title = title;
+      link.innerHTML = truncate(title, 27);
 
       var p = li.querySelector('p');
       p.innerHTML = product.description || '(описание отсутствует)';
