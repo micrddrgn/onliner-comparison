@@ -48,6 +48,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
       if (rateBlock !== null) {
         button.classList.add('state-remove');
         button.innerHTML = 'Удалить из сравнения &#10006;';
+        button.title = 'Исключить данный товар из списка для сравнения';
       }
       break;
 
@@ -55,6 +56,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
       if (rateBlock !== null) {
         button.classList.remove('state-remove');
         button.innerHTML = 'Добавить к сравнению';
+        button.title = 'Добавить данный товар в список для сравнения';
       }
       break;
 
@@ -121,9 +123,11 @@ if (rateBlock !== null) {
     if (response === null) {
       button.innerHTML = 'Добавить к сравнению';
       button.classList.remove('state-remove');
+      button.title = 'Добавить данный товар в список для сравнения';
     } else {
       button.classList.add('state-remove');
       button.innerHTML = 'Удалить из сравнения &#10006;';
+      button.title = 'Исключить данный товар из списка для сравнения';
     }
     rateBlock.appendChild(button);
   });
@@ -133,11 +137,13 @@ if (rateBlock !== null) {
       sendMessage('removeProduct', product.id, function(response) {
         button.classList.remove('state-remove');
         button.innerHTML = 'Добавить к сравнению';
+        button.title = 'Добавить данный товар в список для сравнения';
       });
     } else {
       sendMessage('addProduct', product, function(response) {
         button.classList.add('state-remove');
         button.innerHTML = 'Удалить из сравнения &#10006;';
+        button.title = 'Исключить данный товар из списка для сравнения';
       });
     }
   }, true);

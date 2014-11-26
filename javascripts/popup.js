@@ -40,9 +40,12 @@ document.addEventListener('DOMContentLoaded', function() {
     product:  '<div class="image">' +
                 '<img src="" title="" alt="">' +
               '</div>' +
-              '<a href="" target="_blank" title=""></a>' +
+              '<a href="" target="_blank" title="">' +
+                '<i class="icon-new-tab"></i>' +
+                '<span></span>' +
+              '</a>' +
               '<p></p>' +
-              '<button class="remove" title="Удалить из сравнения">&#10006;</button>' +
+              '<button class="remove" title="Исключить товар из списка сравнения">&#10006;</button>' +
               '<div class="clear"></div>'
   };
 
@@ -73,10 +76,10 @@ document.addEventListener('DOMContentLoaded', function() {
       // to know exact string length before inserting
       var title = html_unescape(product.title);
 
-      var link = li.querySelector('a');
+      var link = li.querySelector('a span');
       link.href = product.url;
-      link.title = title;
-      link.innerHTML = truncate(title, 27);
+      link.title = title + ' - откроется в новой вкладке';
+      link.innerHTML = truncate(title, 25);
 
       var p = li.querySelector('p');
       p.innerHTML = product.description || '(описание отсутствует)';

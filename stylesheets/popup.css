@@ -34,6 +34,10 @@ ul.products li {
   border-bottom: 1px solid #CCC;
 }
 
+ul.products li a span {
+  padding-left: 3px;
+}
+
 ul.products li div.image {
   width: 80px;
   max-height: 80px;
@@ -80,4 +84,16 @@ label input[type="checkbox"] {
 
 div.clear {
   clear: both;
+}
+
+a i.icon-new-tab {
+  background: url('chrome-extension://__MSG_@@extension_id__/images/icon-new-tab.png') no-repeat;
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+a.compare i.icon-new-tab {
+  vertical-align: top;
 }

@@ -16,16 +16,23 @@
   </head>
   <body>
     
-    <button class="onliner-comparison-extension-popup-add-button" title="Добавить для сравнения">+ Добавить</button>
+    <button class="onliner-comparison-extension-popup-add-button"
+      title="Добавить товар с текущей страницы в список для сравнения"
+    >
+      + Добавить
+    </button>
 
-    <a class="compare" href="http://catalog.onliner.by/compare/" target="_blank" title="Открыть сравнение в новой вкладке">
+    <a class="compare" href="http://catalog.onliner.by/compare/"
+      target="_blank" title="Страница сравнения товаров откроется в новой вкладке"
+    >
+      <i class="icon-new-tab"></i>
       <img src="http://catalog.onliner.by/pic/btn_compare.gif">
     </a>
 
     <ul class="products">
       <li class="status">Загрузка...</li>
     </ul>
-    <label>
+    <label title="При включенной опции, когда открывается страница сравнения товаров, все доступные на ней товары отразятся на данном списке">
       <input type="checkbox" class="sync">
       Синхронизировать со страницей сравнения
     </label>
