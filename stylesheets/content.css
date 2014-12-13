@@ -1,17 +1,17 @@
 .onliner-comparison-extension-popup-add-button,
-.onliner-comparison-extension-technical-page-add-button {
+.b-offers button.onliner-comparison-extension-technical-page-add-button {
   background: #FFFFFF url('chrome-extension://__MSG_@@extension_id__/images/icons/16.png') no-repeat;
   cursor: pointer;
   font: 10px Tahoma,Verdana,Arial,sans-serif;
-  padding-left: 20px;
+  padding: 1px 6px 1px 20px;
   border: 1px outset;
   height: 16px;
 }
 
-.onliner-comparison-extension-technical-page-add-button {
+.b-offers button.onliner-comparison-extension-technical-page-add-button {
   margin: 3px 10px 0px 20px;
 }
 
-.onliner-comparison-extension-technical-page-add-button.state-remove {
+.b-offers button.onliner-comparison-extension-technical-page-add-button.state-remove {
   background-color: #EFF4FD;
 }

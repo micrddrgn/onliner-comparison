@@ -21,12 +21,12 @@ function getClosest(el, tag) {
 
 function parseProduct() {
 
-  var container = document.querySelector('.b-whbd-i');
+  var container = document.querySelector('.b-offers-desc');
 
-  var title = container.querySelector('.product_h1 td h1 span').innerHTML;
-  var description = container.querySelector('.ppdescr').innerHTML;
-  var url = container.querySelector('.ppimage a').href;
-  var imageUrl = container.querySelector('.ppimage img').src;
+  var title = document.querySelector('.product-header .b-offers-heading .b-offers-title').innerText;
+  var description = container.querySelector('.b-offers-desc .b-offers-desc__info-specs p').innerText;
+  var url = container.querySelector('.b-offers-desc__stars').href.split('/').slice(0, -1).join('/');
+  var imageUrl = container.querySelector('.b-offers-desc__figure .b-offers-desc__figure-wrap img').src;
   var id = url.split('/').filter(function(n) { return n; }).pop();  
 
   var product = {
@@ -111,7 +111,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 
 // attach custom button to a page
 
-var rateBlock = document.querySelector('.pprate');
+var rateBlock = document.querySelector('.b-offers-desc__info-rating');
 if (rateBlock !== null) {
 
   var product = parseProduct();
