@@ -24,10 +24,43 @@ function parseProduct() {
   var container = document.querySelector('.b-offers-desc');
 
   var title = document.querySelector('.product-header .b-offers-heading .b-offers-title').innerText;
-  var description = container.querySelector('.b-offers-desc .b-offers-desc__info-specs p').innerText;
-  var url = container.querySelector('.b-offers-desc__stars').href.split('/').slice(0, -1).join('/');
+  var url = container.querySelector('.b-offers-desc__leave-review').href.split('/').slice(0, -2).join('/');
   var imageUrl = container.querySelector('.b-offers-desc__figure .b-offers-desc__figure-wrap img').src;
-  var id = url.split('/').filter(function(n) { return n; }).pop();  
+  var id = url.split('/').filter(function(n) { return n; }).pop();
+  var description = [];
+
+  var descriptionRows = document.querySelectorAll('.product-specs .product-specs__group--short table tr');
+  if (descriptionRows.length > 0) {
+    for (var i = 0; i < descriptionRows.length; i++) {
+      var descriptionRow = descriptionRows[i];
+
+      var descriptionCell = descriptionRow.children[1];
+
+      var descriptionValue = null;
+      // check if a cell contains a 'positive checkmark'
+      if (descriptionCell.querySelector('span.i-tip')) {
+        descriptionValue = true;
+      // check if a cell contains a 'negative cross'
+      } else if (descriptionCell.querySelector('span.i-x')) {
+        descriptionValue = false;
+      // or grab a string
+      }
+
+      // check if a text is a representable information
+      var descriptionText = descriptionCell.textContent.trim();
+      if (descriptionValue === null && (!descriptionText || descriptionText.toLowerCase() === 'нет данных')) {
+        continue;
+      }
+
+      var descriptionTitle = descriptionRow.children[0].innerText.trim();
+
+      description.push({
+        title: descriptionTitle,
+        text: descriptionText,
+        value: descriptionValue
+      });
+    }
+  }
 
   var product = {
     id: id,
@@ -117,7 +150,7 @@ if (rateBlock !== null) {
   var product = parseProduct();
 
   var button = document.createElement('button');
-  button.classList.add('onliner-comparison-extension-technical-page-add-button');  
+  button.classList.add('onliner-comparison-extension-technical-page-add-button');
 
   sendMessage('findProduct', product.id, function(response) {
     if (response === null) {
@@ -167,7 +200,7 @@ if (compareColumn !== null) {
 
   // for some reason table itself does not exist after page load
   // maybe some javascript is involved
-  // so constantly try to get the table 
+  // so constantly try to get the table
   var compareTable;
   function parseCompareTable() {
     compareTable = document.querySelector('#rgMasterTable2');
@@ -198,17 +231,12 @@ if (compareColumn !== null) {
       var tableFirstColumnCells = tableBody.querySelectorAll('tr td:nth-child(1)');
       for (var i = 0; i < tableFirstColumnCells.length; i++) {
         var tableCell = tableFirstColumnCells[i];
+        if (! tableCell.parentNode.classList.contains('pdsection')) {
+          continue;
+        }
 
-        var cellLinks = tableCell.querySelectorAll('a');
-        if (cellLinks.length === 0) { continue; }
-
-        var link = cellLinks[cellLinks.length - 1];
-        if (!link) { continue; }
-
-        var title = link.text;
-
-        // try another cell if not succeeded
-        if (title.toLowerCase() !== 'описание') {
+        var title = tableCell.textContent;
+        if (title.toLowerCase() !== 'основные') {
           continue;
         }
 
@@ -228,8 +256,44 @@ if (compareColumn !== null) {
         var description = '';
 
         if (tableRowWithDescriptions) {
-          var tableCellWithDescription = tableRowWithDescriptions.children[i];
-          description = tableCellWithDescription.innerHTML;
+          var description = [];
+
+          // iterate all rows under 'Основные' section until we reach next section
+          // intermediate sections contain information on which an original description is based on
+          var currentRow = tableRowWithDescriptions;
+          do {
+            currentRow = currentRow.nextElementSibling;
+            // if current row is a next section
+            if (currentRow.classList.contains('pdsection')) {
+              break;
+            }
+
+            var descriptionCell = currentRow.children[i];
+
+            var descriptionValue = null;
+            // check if a cell contains a 'positive checkmark'
+            if (descriptionCell.querySelector('img[src$="ico_yes.gif"]')) {
+              descriptionValue = true;
+            // check if a cell contains a 'negative cross'
+            } else if (descriptionCell.querySelector('img[src$="ico_no.gif"]')) {
+              descriptionValue = false;
+            }
+
+            // check if a text is a representable information
+            var descriptionText = descriptionCell.textContent.trim();
+            if (descriptionValue === null && (!descriptionText || descriptionText.toLowerCase() === 'нет данных')) {
+              continue;
+            }
+
+            // get parameter name for title attribute
+            var descriptionTitle = currentRow.children[0].querySelector('a:last-child').textContent.trim();
+
+            description.push({
+              title: descriptionTitle,
+              text: descriptionText,
+              value: descriptionValue
+            });
+          } while (currentRow);
         }
 
         var product = {
@@ -259,7 +323,7 @@ if (compareColumn !== null) {
   sendMessage('isEnabledSync', null, function(response) {
     var enabled = !!response;
     if (enabled) {
-      parseCompareTable(); 
+      parseCompareTable();
     }
   });
 

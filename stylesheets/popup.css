@@ -71,6 +71,10 @@ ul.products li:last-child {
   border-bottom: 0px;
 }
 
+ul.products li p span img {
+  vertical-align: bottom;
+}
+
 a.compare {
   float: right;
   margin-top: -5px;

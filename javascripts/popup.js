@@ -14,10 +14,19 @@ function truncate(string, limit, replacement) {
 }
 
 // unescape string in case it has '&' as '&amp' in it and so on
-function html_unescape(string) {
+function htmlUnescape(string) {
   var div = document.createElement('div');
   div.innerHTML = string;
   return div.firstChild.nodeValue;
+}
+
+function isArray(obj) {
+  return (Object.prototype.toString.call(obj) === '[object Array]');
+}
+
+function stateIcon(state) {
+  var word = state ? 'yes' : 'no';
+  return '<img width="12" height="12" border="0" src="http://catalog.onliner.by/pic/ico_' + word + '.gif">';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -74,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // unescape title in case it has '&', '>' in it
       // to know exact string length before inserting
-      var title = html_unescape(product.title);
+      var title = htmlUnescape(product.title);
 
       var link = li.querySelector('a span');
       link.href = product.url;
@@ -82,7 +91,21 @@ document.addEventListener('DOMContentLoaded', function() {
       link.innerHTML = truncate(title, 25);
 
       var p = li.querySelector('p');
-      p.innerHTML = product.description || '(описание отсутствует)';
+
+      var description = product.description || null;
+      // save compatibility with old string-like description
+      if (isArray(description) && description.length) {
+        description = description.map(function(part) {
+          var html = '<span title="' + part.title + '">';
+          if (part.value === true || part.value === false) {
+            html += stateIcon(part.value);
+          }
+          html += ' ' + part.text + '</span>';
+          return html;
+        }).join(', ');
+      }
+
+      p.innerHTML = description || '(описание отсутствует)';
 
       var button = li.querySelector('button');
       button.addEventListener('click', function() {
@@ -134,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
     },
     hideStatus: function() {
       domElements.status.style.display = 'none';
-    }  
+    }
   };
 
   domElements.addButton.addEventListener('click', function() {

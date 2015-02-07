@@ -186,7 +186,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
   }
 
   // This function becomes invalid when the event listener returns,
-  // unless you return true from the event listener to indicate 
+  // unless you return true from the event listener to indicate
   // you wish to send a response asynchronously (this will keep the
   // message channel open to the other end until sendResponse is called).
   return true;
@@ -206,7 +206,7 @@ function updateBadge(value) {
 storageManager.load(function() {});
 
 // create context menu for "compare" page
-// adds functionality that allows users to remove items from compare table 
+// adds functionality that allows users to remove items from compare table
 // with no need to scroll down to the original buttons
 var contextMenuComparePageRemoveId = 'compare-page-context-menu-remove-id';
 
