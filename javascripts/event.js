@@ -109,6 +109,12 @@ var storageManager = {
     });
   },
 
+  findAll: function(sendResponse) {
+    chrome.storage.local.get(null, function(storageData) {
+      sendResponse(storageData.products || []);
+    });
+  },
+
   isValid: function(product) {
     return (product !== undefined && product.id);
   },
@@ -167,6 +173,26 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
 
     case 'findProduct':
       storageManager.find(request.data, sendResponse);
+      break;
+
+    case 'findAllProducts':
+      storageManager.findAll(sendResponse);
+      break;
+
+    case 'generateCompareLink':
+      // base url for comparison
+      var compareUrl = 'http://catalog.onliner.by/compare/';
+      // products ids delimiter in compare url
+      var compareUrlDelimiter = '+';
+
+      storageManager.findAll(function(products) {
+        var ids = products.map(function(product) {
+          return product.id;
+        });
+        var productsStr = ids.join(compareUrlDelimiter);
+
+        sendResponse(compareUrl + productsStr);
+      });
       break;
 
     case 'enableSync':

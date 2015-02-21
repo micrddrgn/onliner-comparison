@@ -43,7 +43,6 @@ function parseProduct() {
       // check if a cell contains a 'negative cross'
       } else if (descriptionCell.querySelector('span.i-x')) {
         descriptionValue = false;
-      // or grab a string
       }
 
       // check if a text is a representable information
@@ -328,3 +327,136 @@ if (compareColumn !== null) {
   });
 
 }
+
+// products list page
+var productsForm = document.querySelector('[name="product_list"]');
+if (productsForm !== null) {
+
+  function parseListProduct(button) {
+
+    var tableRow = getClosest(button, 'tr');
+
+    var container = tableRow.querySelector('td.pdescr');
+
+    var title = container.querySelector('strong.pname a').innerText;
+    var url = container.querySelector('strong.pname a').href;
+    var imageUrl = tableRow.querySelector('td.pimage img').src;
+    var id = url.split('/').filter(function(n) { return n; }).pop();
+    var description = container.querySelector('div').innerText.replace(', подробнее...', '');
+
+    var product = {
+      id: id,
+      url: url,
+      title: title,
+      description: description,
+      imageUrl: imageUrl
+    };
+
+    return product;
+  }
+
+  function renderList(ids) {
+
+    var checkTableCells = productsForm.querySelectorAll('table td.pcheck');
+    var drawnCompareLinks = 0;
+
+    for (var i = 0; i < checkTableCells.length; i++) {
+      var checkTableCell = checkTableCells[i];
+      var checkTableRow = checkTableCell.parentNode;
+
+      var hasCompareLink = false;
+
+      for (var j = 0; j < checkTableCell.children.length; j++) {
+        if (checkTableCell.children[j].classList.contains('pcompbtn')) {
+          hasCompareLink = true;
+        }
+        checkTableCell.children[j].style.display = 'none';
+      }
+
+      if (hasCompareLink) {
+        var compareLinkImg = document.createElement('img');
+        compareLinkImg.src = 'http://catalog.onliner.by/pic/btn_compare.gif';
+
+        var compareLink = document.createElement('a');
+        compareLink.href = 'javascript: void(0)';
+        compareLink.className = 'onliner-comparison-extension-list-page-compare-button';
+        compareLink.title = 'Открыть страницу сравнения товаров в текущей вкладке';
+        compareLink.appendChild(compareLinkImg);
+
+        compareLink.addEventListener('click', function(ev) {
+
+          sendMessage('generateCompareLink', null, function(url) {
+            window.location.href = url;
+          });
+
+          return false;
+        });
+      }
+
+      var button = document.createElement('button');
+      var productId = checkTableRow.querySelector('td.pdescr strong.pname a').href
+                        .split('/').filter(function(n) { return n; }).pop();
+
+      button.className = 'onliner-comparison-extension-list-page-add-button';
+
+      if (ids.indexOf(productId) === -1) {
+        button.innerHTML = '+';
+        button.title = 'Добавить данный товар в список для сравнения';
+      } else {
+        button.innerHTML = '&#10006;';
+        button.classList.add('state-remove');
+        button.title = 'Исключить данный товар из списка для сравнения';
+      }
+
+      button.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var that = this;
+
+        var product = parseListProduct(this);
+
+        if (this.classList.contains('state-remove')) {
+          sendMessage('removeProduct', product.id, function(response) {
+            that.classList.remove('state-remove');
+            that.innerHTML = '+';
+            that.title = 'Добавить данный товар в список для сравнения';
+          });
+        } else {
+          sendMessage('addProduct', product, function(response) {
+            that.classList.add('state-remove');
+            that.innerHTML = '&#10006;';
+            that.title = 'Исключить данный товар из списка для сравнения';
+          });
+        }
+
+        return false;
+      });
+
+      if (hasCompareLink && drawnCompareLinks === 0) {
+        checkTableCell.appendChild(compareLink);
+        checkTableCell.appendChild(button);
+        drawnCompareLinks = 1;
+      } else if (hasCompareLink && drawnCompareLinks === 1) {
+        checkTableCell.appendChild(button);
+        checkTableCell.appendChild(compareLink);
+        drawnCompareLinks = 2;
+      } else {
+        checkTableCell.appendChild(button);
+      }
+
+      hasCompareLink = false;
+    }
+  }
+
+  sendMessage('findAllProducts', null, function(response) {
+
+    var ids = response.map(function(product) {
+      return product.id;
+    });
+
+    renderList(ids);
+  });
+
+
+}
+
