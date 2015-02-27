@@ -340,7 +340,7 @@ if (productsForm !== null) {
 
     var title = container.querySelector('strong.pname a').innerText;
     var url = container.querySelector('strong.pname a').href;
-    var imageUrl = tableRow.querySelector('td.pimage img').src;
+    var imageUrl = (tableRow.querySelector('td.pimage img') || {}).src;
     var id = url.split('/').filter(function(n) { return n; }).pop();
     var description = container.querySelector('div').innerText.replace(', подробнее...', '');
 
@@ -413,9 +413,9 @@ if (productsForm !== null) {
         ev.stopPropagation();
         var that = this;
 
-        var product = parseListProduct(this);
+        var product = parseListProduct(that);
 
-        if (this.classList.contains('state-remove')) {
+        if (that.classList.contains('state-remove')) {
           sendMessage('removeProduct', product.id, function(response) {
             that.classList.remove('state-remove');
             that.innerHTML = '+';
@@ -448,15 +448,340 @@ if (productsForm !== null) {
     }
   }
 
+  function renderGroupedList(ids) {
+    var productImageCells = productsForm.querySelectorAll('table tr td.pimage');
+
+    for (var i = 0; i < productImageCells.length; i++) {
+      var productImageCell = productImageCells[i];
+      var checkTableRow = getClosest(productImageCells[i], 'tr');
+
+      var moreProductsTableRow = checkTableRow.nextElementSibling;
+
+      var productRows = moreProductsTableRow.querySelectorAll('.dev_row');
+      var addedProductsCount = 0;
+
+      var buttonAll = document.createElement('button');
+
+      for (var j = 0; j < productRows.length; j++) {
+        var productRow = productRows[j];
+
+        var pchecks = productRow.querySelectorAll('.pcheck');
+
+        pchecks[0].querySelector('label').classList.add('onliner-comparison-extension-force-display-none');
+
+        pchecks[1].children[0].classList.add('onliner-comparison-extension-force-display-none');
+
+        var button = document.createElement('button');
+        var productId = productRow.querySelector('td.pdescr strong.pname a').href
+                        .split('/').filter(function(n) { return n; }).pop();
+
+        button.className = 'onliner-comparison-extension-grouped-list-page-add-button';
+        if (ids.indexOf(productId) === -1) {
+          button.innerHTML = '+';
+          button.title = 'Добавить данный товар в список для сравнения';
+        } else {
+          addedProductsCount += 1;
+          button.innerHTML = '&#10006;';
+          button.classList.add('state-remove');
+          button.title = 'Исключить данный товар из списка для сравнения';
+        }
+
+        button.addEventListener('click', (function(productImageCell, buttonAll, moreProductsTableRow) {
+          return function(ev) {
+
+          ev.preventDefault();
+          ev.stopPropagation();
+          var that = this;
+
+          var product = parseListProduct(that);
+          product.imageUrl = productImageCell.querySelector('img').src;
+
+          if (that.classList.contains('state-remove')) {
+            sendMessage('removeProduct', product.id, function(response) {
+              that.classList.remove('state-remove');
+              that.innerHTML = '+';
+              that.title = 'Добавить данный товар в список для сравнения';
+
+              buttonAll.innerHTML = '+ все';
+              buttonAll.classList.remove('state-remove');
+              buttonAll.title = 'Добавить все товары данного типа в список для сравнения';
+            });
+          } else {
+            sendMessage('addProduct', product, function(response) {
+              that.classList.add('state-remove');
+              that.innerHTML = '&#10006;';
+              that.title = 'Исключить данный товар из списка для сравнения';
+
+              if (moreProductsTableRow.querySelectorAll('.onliner-comparison-extension-grouped-list-page-add-button.state-remove').length === moreProductsTableRow.querySelectorAll('.onliner-comparison-extension-grouped-list-page-add-button').length) {
+                buttonAll.innerHTML = '&#10006; все';
+                buttonAll.classList.add('state-remove');
+                buttonAll.title = 'Исключить все товары данного типа из списка для сравнения';
+              }
+            });
+          }
+
+          return false;
+          }
+
+        })(productImageCell, buttonAll, moreProductsTableRow));
+
+        pchecks[1].appendChild(button);
+      }
+
+
+      var checkAllBox = productImageCell.querySelector('input[type="checkbox"]');
+      var checkAllBoxContainer = checkAllBox.parentNode;
+
+      for (var j = 0; j < checkAllBoxContainer.children.length; j++) {
+        checkAllBoxContainer.children[j].style.display = 'none';
+      }
+
+      buttonAll.classList.add('onliner-comparison-extension-grouped-list-page-add-all-button');
+
+      if (addedProductsCount === productRows.length) {
+        buttonAll.innerHTML = '&#10006; все';
+        buttonAll.classList.add('state-remove');
+        buttonAll.title = 'Исключить все товары данного типа из списка для сравнения';
+      } else {
+        buttonAll.innerHTML = '+ все';
+        buttonAll.classList.remove('state-remove');
+        buttonAll.title = 'Добавить все товары данного типа в список для сравнения';
+      }
+
+      buttonAll.innerHTML = '+ все';
+
+      if (productRows.length === 0) {
+        buttonAll.setAttribute('disabled', 'disabled');
+      } else {
+        buttonAll.addEventListener('click', (function(moreProductsTableRow) {
+          return function(ev) {
+
+          ev.preventDefault();
+          ev.stopPropagation();
+          var that = this;
+
+          if (that.classList.contains('state-remove')) {
+
+            var productRowsButtonsStateRemove = moreProductsTableRow.querySelectorAll('.onliner-comparison-extension-grouped-list-page-add-button.state-remove');
+
+            for (var k = 0; k < productRowsButtonsStateRemove.length; k++) {
+                productRowsButtonsStateRemove[k].click();
+            }
+
+            that.innerHTML = '+ все';
+            that.classList.remove('state-remove');
+            that.title = 'Добавить все товары данного типа в список для сравнения';
+          } else {
+            var productRowsButtonsStateAdd = moreProductsTableRow.querySelectorAll('.onliner-comparison-extension-grouped-list-page-add-button:not(.state-remove)');
+
+            for (var k = 0; k < productRowsButtonsStateAdd.length; k++) {
+              productRowsButtonsStateAdd[k].click();
+            }
+
+            that.innerHTML = '&#10006; все';
+            that.classList.add('state-remove');
+            that.title = 'Исключить все товары данного типа из списка для сравнения';
+          }
+
+          return false;
+          }
+
+        }(moreProductsTableRow)));
+      }
+
+      checkAllBoxContainer.appendChild(buttonAll);
+    }
+
+
+    var compareButtonsRows = productsForm.querySelectorAll('div.pcompbtn > table tr');
+    for (var i = 0; i < compareButtonsRows.length; i++) {
+      var compareButtonRow = compareButtonsRows[i];
+
+      if (compareButtonRow.children.length === 4) {
+        compareButtonRow.children[1].classList.add('onliner-comparison-extension-force-display-none');
+        compareButtonRow.children[2].classList.add('onliner-comparison-extension-force-display-none');
+      } else if (compareButtonRow.children.length === 3) {
+        compareButtonRow.children[1].classList.add('onliner-comparison-extension-force-display-none');
+      }
+
+      compareButtonRow.children[0].querySelector('a').classList.add('onliner-comparison-extension-force-display-none');
+
+      var compareLinkImg = document.createElement('img');
+      compareLinkImg.src = 'http://catalog.onliner.by/pic/btn_compare.gif';
+
+      var compareLink = document.createElement('a');
+      compareLink.href = 'javascript: void(0)';
+      compareLink.className = 'onliner-comparison-extension-grouped-list-page-compare-button';
+      compareLink.title = 'Открыть страницу сравнения товаров в текущей вкладке';
+      compareLink.appendChild(compareLinkImg);
+
+      compareLink.addEventListener('click', function(ev) {
+
+        sendMessage('generateCompareLink', null, function(url) {
+          window.location.href = url;
+        });
+
+        return false;
+      });
+
+      compareButtonRow.children[0].appendChild(compareLink);
+
+    }
+
+  }
+
   sendMessage('findAllProducts', null, function(response) {
 
     var ids = response.map(function(product) {
       return product.id;
     });
 
-    renderList(ids);
+    var isGroupedList = !!productsForm.querySelector('table tr td.pimage input[type="checkbox"]');
+
+    if (isGroupedList) {
+      renderGroupedList(ids);
+    } else {
+      renderList(ids);
+    }
   });
+}
+
+if (window.location.pathname.split('/').indexOf('gridview') !== -1) {
+
+  function parseTableProduct(button) {
+    var compareCell = button.parentNode;
+    var compareRow = compareCell.parentNode;
+    var compareCellSiblings = compareRow.querySelectorAll('td.pgcheck');
+
+    var index = Array.prototype.slice.call(compareCellSiblings).indexOf(compareCell);
+
+    var imageRow = compareRow.nextElementSibling;
+    var imageCell = imageRow.children[index];
+    var nameRow = imageRow.nextElementSibling;
+    var nameCell = nameRow.children[index];
+
+    var title = nameCell.querySelector('div.pgname a').innerText;
+    var url = nameCell.querySelector('div.pgname a').href;
+    var imageUrl = imageCell.querySelector('img').src;
+    var id = url.split('/').filter(function(n) { return n; }).pop();
+    var description = '';
+
+    var product = {
+      id: id,
+      url: url,
+      title: title,
+      description: description,
+      imageUrl: imageUrl
+    };
+
+    return product;
+  }
 
 
+  sendMessage('findAllProducts', null, function(response) {
+
+    var ids = response.map(function(product) {
+      return product.id;
+    });
+
+    var productCells = document.querySelectorAll('.pgimage');
+    for (var i = 0; i < productCells.length; i++) {
+      var productCell = productCells[i];
+
+      if (! productCell.innerHTML) {
+        continue;
+      }
+
+      var productRow = productCell.parentNode;
+      var compareRow = productRow.previousElementSibling;
+
+      var index = Array.prototype.slice.call(productRow.children).indexOf(productCell);
+
+      var compareCell = compareRow.querySelectorAll('td.pgcheck')[index];
+
+      for (var j = 0; j < compareCell.children.length; j++) {
+        compareCell.children[j].classList.add('onliner-comparison-extension-force-display-none');
+      }
+
+      var button = document.createElement('button');
+      var productId = productCell.querySelector('a').href
+                        .split('/').filter(function(n) { return n; }).pop();
+
+      button.className = 'onliner-comparison-extension-table-list-page-add-button';
+
+      if (ids.indexOf(productId) === -1) {
+        button.innerHTML = '+';
+        button.title = 'Добавить данный товар в список для сравнения';
+      } else {
+        button.innerHTML = '&#10006;';
+        button.classList.add('state-remove');
+        button.title = 'Исключить данный товар из списка для сравнения';
+      }
+
+      button.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var that = this;
+
+        var product = parseTableProduct(that);
+
+        if (that.classList.contains('state-remove')) {
+          sendMessage('removeProduct', product.id, function(response) {
+            that.classList.remove('state-remove');
+            that.innerHTML = '+';
+            that.title = 'Добавить данный товар в список для сравнения';
+          });
+        } else {
+          sendMessage('addProduct', product, function(response) {
+            that.classList.add('state-remove');
+            that.innerHTML = '&#10006;';
+            that.title = 'Исключить данный товар из списка для сравнения';
+          });
+        }
+
+        return false;
+      });
+
+      compareCell.appendChild(button);
+    }
+
+    var compareButtonCells = document.querySelectorAll('.pgcompbtn table td.pgcheck');
+    for (var i = 0; i < compareButtonCells.length; i++) {
+      var compareButtonCell = compareButtonCells[i];
+
+      console.dir(compareButtonCell);
+
+      for (var j = 0; j < compareButtonCell.children.length; j++) {
+        compareButtonCell.children[j].classList.add('onliner-comparison-extension-force-display-none');
+      }
+
+      var compareLinkImg = document.createElement('img');
+      compareLinkImg.src = 'http://catalog.onliner.by/pic/btn_compare.gif';
+
+      var compareLink = document.createElement('a');
+      compareLink.href = 'javascript: void(0)';
+
+      if (i === 0) {
+        compareLink.className = 'onliner-comparison-extension-table-list-page-compare-top-button';
+      } else {
+        compareLink.className = 'onliner-comparison-extension-table-list-page-compare-button';
+      }
+
+      compareLink.title = 'Открыть страницу сравнения товаров в текущей вкладке';
+      compareLink.appendChild(compareLinkImg);
+
+      compareLink.addEventListener('click', function(ev) {
+
+        sendMessage('generateCompareLink', null, function(url) {
+          window.location.href = url;
+        });
+
+        return false;
+      });
+
+      compareButtonCell.appendChild(compareLink);
+    }
+
+  });
 }
 
