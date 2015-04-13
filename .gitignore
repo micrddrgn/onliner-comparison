@@ -1,0 +1,4 @@
+dist/javascripts/**/*.js
+node_modules
+package.zip
+todo.md

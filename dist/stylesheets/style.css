@@ -1,0 +1,15 @@
+a.cmpext-link {
+  cursor: pointer;
+}
+
+a.cmpext-link i.cmpext-new-tab {
+  background: url('chrome-extension://__MSG_@@extension_id__/images/icon-new-tab.png') no-repeat;
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.cmpext-hidden {
+  display: none !important;
+}
