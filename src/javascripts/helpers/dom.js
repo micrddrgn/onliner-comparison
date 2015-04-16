@@ -1,7 +1,8 @@
 'use strict';
 
 /*
-  fix children, could be better
+  todo:
+  - fix children, could be better
  */
 
 var dom = {
@@ -48,6 +49,24 @@ var dom = {
       cb.bind(e.currentTarget)(e);
     };
     node.addEventListener(eventName, handler.bind(this));
+  },
+
+  attempt: function (node, selector, delay, attempts, success, fail) {
+    var el;
+
+    function query() {
+      el = node.querySelector(selector);
+      if (attempts > 0 && !el) {
+        attempts -= 1;
+        setTimeout(query, delay);
+      } else if (attempts === 0) {
+        if (fail) { fail(); }
+      } else {
+        if (success) { success(el); }
+      }
+    }
+
+    query();
   }
 };
 

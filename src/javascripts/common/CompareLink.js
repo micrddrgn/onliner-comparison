@@ -5,7 +5,7 @@
   could be prettier
  */
 
-function compareLink() {
+function CompareLink() {
   var a = document.createElement('a');
   a.className = 'cmpext-link';
   a.title = 'Открыть страницу сравнения товаров в новой вкладке';
@@ -28,4 +28,4 @@ function compareLink() {
   return a;
 }
 
-module.exports = compareLink;
+module.exports = CompareLink;

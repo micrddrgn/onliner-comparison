@@ -1,5 +1,10 @@
 'use strict';
 
+/*
+  rename event
+  simplify parsing
+ */
+
 var message = require('../../helpers/message'),
     dom = require('../../helpers/dom');
 
@@ -12,7 +17,7 @@ console.log(Page, Page.prototype);
 function PageProduct() {
   Page.call(this);
 
-  this.on('removeProduct', this.untoggle);
+  this.on('remove', this.untoggle);
 }
 
 PageProduct.prototype = Object.create(Page.prototype);
@@ -86,11 +91,11 @@ PageProduct.prototype.handle = function (e) {
   var product = this.parse();
 
   if (toggler.isActive()) {
-    message.event('removeProduct', product.id, function () {
+    message.event('remove', product.id, function () {
       toggler.toggle(false);
     });
   } else {
-    message.event('addProduct', product, function () {
+    message.event('add', product, function () {
       toggler.toggle(true);
     });
   }

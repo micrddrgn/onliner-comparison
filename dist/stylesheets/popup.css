@@ -13,6 +13,10 @@ a:hover {
   text-decoration: underline;
 }
 
+.clear {
+  clear: both;
+}
+
 #products {
   position: relative;
   list-style-type: none;

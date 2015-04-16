@@ -1,7 +1,8 @@
 'use strict';
 
-var dom = require('../../helpers/dom'),
-    EventEmitter = require('../../lib/EventEmitter');
+var dom = require('../../helpers/dom');
+
+var EventEmitter = require('../../lib/EventEmitter');
 
 function PopupList($list, $status) {
   EventEmitter.call(this);
@@ -116,7 +117,7 @@ PopupList.prototype.prepareDescription = function (description) {
       }
       html += ' ' + part.text + '</span>';
       return html;
-    }).join(', ');
+    }, this).join(', ');
   }
   return description || '(описание отсутствует)';
 };

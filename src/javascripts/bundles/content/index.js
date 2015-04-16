@@ -2,10 +2,11 @@
 
 var handleError = require('../../helpers/handleError');
 
-var PageDetector = require('./PageDetector');
+var PageDetector = require('../../lib/PageDetector');
 
 var pages = {
-  product: require('./PageProduct')
+  product: require('./PageProduct'),
+  compare: require('./PageCompare')
 };
 
 // create IIFE to be able to return from it if something goes wrong in the middle
@@ -37,7 +38,7 @@ var pages = {
   console.log('Page detected: %s', pageName);
 
   if (!Object.hasOwnProperty.call(pages, pageName)) {
-    return handleError(new Error('Unknown page type: ' + pageName));
+    return handleError('Unknown page type: ' + pageName);
   }
 
   var page = new pages[pageName]();
@@ -48,8 +49,11 @@ var pages = {
 
   chrome.extension.onMessage.addListener(function (request) {
     switch(request.action) {
-    case 'removeProduct':
-      page.emit('removeProduct', request.data);
+    case 'remove':
+      page.emit('remove', request.data);
+      break;
+    case 'context':
+      page.emit('context');
       break;
     default:
       return false;

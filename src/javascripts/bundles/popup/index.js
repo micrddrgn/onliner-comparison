@@ -1,7 +1,8 @@
 'use strict';
 
-var compareLink = require('../../helpers/compareLink'),
-    message = require('../../helpers/message');
+var message = require('../../helpers/message');
+
+var CompareLink = require('../../common/CompareLink');
 
 var PopupList = require('./PopupList');
 
@@ -20,20 +21,19 @@ var $list = document.getElementById('products'),
     $status = document.getElementById('status'),
     $compare = document.getElementById('compare');
 
-$compare.appendChild(compareLink());
-
+$compare.appendChild(new CompareLink());
 
 var popupList = new PopupList($list, $status);
 
 popupList.on('remove', function (id) {
-  message.event('removeProduct', id, function (response) {
+  message.event('remove', id, function (response) {
     if (response) {
       popupList.remove(id);
     }
   });
 });
 
-message.event('loadProducts', function (products) {
+message.event('load', function (products) {
   if (products.length > 0) {
 
     products.forEach(function (product) {

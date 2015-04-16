@@ -79,6 +79,22 @@ Storage.prototype.remove = function (id, cb) {
   }.bind(this));
 };
 
+Storage.prototype.reset = function (items, cb) {
+  if (!Array.isArray(items)) {
+    return cb(null, new Error('Reset requires array'));
+  }
+  var validItems = items.filter(this.isValid);
+  if (!validItems.length) {
+    return cb([]);
+  }
+
+  this.set(validItems, cb);
+};
+
+Storage.prototype.clear = function (cb) {
+  this.set([], cb);
+};
+
 Storage.prototype.find = function (id, cb) {
   this.get(function (items) {
 
@@ -119,10 +135,6 @@ Storage.prototype.indexOfSync = function (items, id) {
 };
 
 // ??????????????????????????????????????????????????
-Storage.prototype.reset = function () {
-  
-};
-
 Storage.prototype.ids = function () {
   
 };
