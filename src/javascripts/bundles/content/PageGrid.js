@@ -1,10 +1,8 @@
 'use strict';
 
-var as = {
-  array: function (arraylike) {
-    return Array.prototype.slice.call(arraylike);
-  }
-};
+/*
+  todo:
+ */
 
 function PageGrid() {}
 

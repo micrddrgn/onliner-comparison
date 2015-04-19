@@ -4,6 +4,7 @@
   todo:
   - optimize calling of "parseTable", check for cached ids, if anything should
     be updated
+  - review the code
  */
 
 var Page = require('./Page');
@@ -97,7 +98,7 @@ PageCompare.prototype.parseTable = function (table) {
       description = [];
 
       // iterate all rows under 'Основные' section until we reach next section
-      // intermediate sections contain information 
+      // intermediate sections contain information
       // on which an original description is based on
       var currentRow = rowWithDescriptions;
       do {

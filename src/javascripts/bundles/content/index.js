@@ -6,7 +6,9 @@ var PageDetector = require('../../lib/PageDetector');
 
 var pages = {
   product: require('./PageProduct'),
-  compare: require('./PageCompare')
+  compare: require('./PageCompare'),
+  list: require('./PageList'),
+  grid: require('./PageGrid')
 };
 
 // create IIFE to be able to return from it if something goes wrong in the middle
@@ -54,6 +56,9 @@ var pages = {
       break;
     case 'context':
       page.emit('context');
+      break;
+    case 'change':
+      page.emit('change', request.data);
       break;
     default:
       return false;

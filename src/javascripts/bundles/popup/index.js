@@ -21,7 +21,10 @@ var $list = document.getElementById('products'),
     $status = document.getElementById('status'),
     $compare = document.getElementById('compare');
 
-$compare.appendChild(new CompareLink());
+
+var compareLink = new CompareLink();
+$compare.appendChild(compareLink.getEl());
+
 
 var popupList = new PopupList($list, $status);
 
@@ -29,6 +32,7 @@ popupList.on('remove', function (id) {
   message.event('remove', id, function (response) {
     if (response) {
       popupList.remove(id);
+      compareLink.updateHref(popupList.getIds());
     }
   });
 });
@@ -39,6 +43,8 @@ message.event('load', function (products) {
     products.forEach(function (product) {
       popupList.add(product);
     });
+
+    compareLink.updateHref(popupList.getIds());
 
   } else {
     popupList.refresh();

@@ -9,35 +9,18 @@ function Storage(namespace, type) {
   this.storage = chrome.storage[this.type];
 
   this.cache = {
-    count: undefined
+    count: undefined,
+    ids: undefined
   };
 }
 
-Storage.prototype.get = function (cb) {
-  this.storage.get(null, function (data) {
-    var items = data[this.namespace] || [];
-    this.cache.count = items.length;
-    cb(items);
-  }.bind(this));
-};
-
-Storage.prototype.set = function (items, cb) {
-  var data = {};
-  data[this.namespace] = items;
-  this.storage.set(data, function () {
-    this.cache.count = items.length;
-    cb(items);
-  }.bind(this));
-};
 
 Storage.prototype.add = function (item, cb) {
-  // check for invalid items like undefined's and stuff
-  // undefined may come when page is not initialized yet
   if (! this.isValid(item)) {
     return cb(null, new Error('Item is invalid'));
   }
 
-  this.get(function (items) {
+  this._get(function (items) {
 
     var exists = items.some(function (i) {
       return i.id === item.id;
@@ -49,21 +32,17 @@ Storage.prototype.add = function (item, cb) {
 
     items.push(item);
 
-    this.set(items, function () {
+    this._set(items, function () {
       cb(item);
     });
 
   }.bind(this));
 };
 
-Storage.prototype.isValid = function (item) {
-  return item && item.id;
-};
-
 Storage.prototype.remove = function (id, cb) {
-  this.get(function (items) {
+  this._get(function (items) {
 
-    var index = this.indexOfSync(items, id);
+    var index = this._indexOfSync(items, id);
     if (index === -1) {
       return cb(null, new Error('Item not found'));
     }
@@ -72,7 +51,7 @@ Storage.prototype.remove = function (id, cb) {
 
     items.splice(index, 1);
 
-    this.set(items, function () {
+    this._set(items, function () {
       cb(item);
     });
 
@@ -88,17 +67,24 @@ Storage.prototype.reset = function (items, cb) {
     return cb([]);
   }
 
-  this.set(validItems, cb);
+  this._set(validItems, cb);
 };
 
 Storage.prototype.clear = function (cb) {
-  this.set([], cb);
+  this._set([], cb);
 };
 
-Storage.prototype.find = function (id, cb) {
-  this.get(function (items) {
+// check for invalid items like undefined's and stuff
+// undefined may come when page is not initialized yet
+Storage.prototype.isValid = function (item) {
+  return item && item.id;
+};
 
-    var index = this.indexOfSync(items, id);
+
+Storage.prototype.find = function (id, cb) {
+  this._get(function (items) {
+
+    var index = this._indexOfSync(items, id);
     if (index === -1) {
       return cb(null, new Error('Item not found'));
     }
@@ -108,22 +94,52 @@ Storage.prototype.find = function (id, cb) {
 };
 
 Storage.prototype.findAll = function (cb) {
-  this.get(cb);
+  this._get(cb);
 };
 
 Storage.prototype.count = function (cb) {
-  if (this.cache.count !== undefined) {
-    return cb(this.cache.count);
-  }
+  this._uncache('count', cb);
+};
 
-  this.get(function () {
-    cb(this.cache.count);
+Storage.prototype.ids = function (cb) {
+  this._uncache('ids', cb);
+};
+
+
+Storage.prototype._get = function (cb) {
+  this.storage.get(null, function (data) {
+    var items = data[this.namespace] || [];
+    this.cache.count = items.length;
+    this.cache.ids = this._idsSync(items);
+    console.log('get', this.cache.ids);
+    cb(items);
+  }.bind(this));
+};
+
+Storage.prototype._set = function (items, cb) {
+  var data = {};
+  data[this.namespace] = items;
+  this.storage.set(data, function () {
+    this.cache.count = items.length;
+    this.cache.ids = this._idsSync(items);
+    console.log('set', this.cache.ids);
+    cb(items);
   }.bind(this));
 };
 
 
-// ??????????????????????????????????????????????????
-Storage.prototype.indexOfSync = function (items, id) {
+Storage.prototype._uncache = function (key, cb) {
+  if (this.cache[key] !== undefined) {
+    return cb(this.cache[key]);
+  }
+
+  // cache is set in get
+  this._get(function () {
+    cb(this.cache[key]);
+  }.bind(this));
+};
+
+Storage.prototype._indexOfSync = function (items, id) {
   var index = -1;
   items.some(function (item, i) {
     if (item.id === id) {
@@ -134,13 +150,10 @@ Storage.prototype.indexOfSync = function (items, id) {
   return index;
 };
 
-// ??????????????????????????????????????????????????
-Storage.prototype.ids = function () {
-  
+Storage.prototype._idsSync = function (items) {
+  return items.map(function (item) {
+    return item.id;
+  });
 };
 
 module.exports = Storage;
-
-
-
-

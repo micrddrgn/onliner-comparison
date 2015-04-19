@@ -2,12 +2,8 @@
 
 /*
   TODO
-
-  rename events
-  handle errors
-  context menu
-  send tab message
-
+  handle storage errors
+  use another class name for context
  */
 
 var message = require('../../helpers/message'),
@@ -20,23 +16,25 @@ var Badge = require('./Badge');
 var badge = new Badge('#F5291A');
 
 var recount = function () {
-  console.log('recound');
   storage.count(function (count) {
     badge.setNumber(count);
   });
+  storage.ids(function (ids) {
+    message.content('change', ids);
+  });
 };
-
 recount();
 
 chrome.extension.onMessage.addListener(function (request, sender, respond) {
-
-  // !!!! handle storage errors?
-  console.log(request, sender, respond);
 
   switch (request.action) {
 
   case 'load':
     storage.findAll(respond);
+    break;
+
+  case 'ids':
+    storage.ids(respond);
     break;
 
   case 'add':
@@ -93,22 +91,23 @@ chrome.extension.onMessage.addListener(function (request, sender, respond) {
 // create context menu for "compare" page
 // adds functionality that allows users to remove items from compare table
 // with no need to scroll down to the original buttons
-var contextMenuComparePageRemoveId = 'compare-page-context-menu-remove-id';
+var menuItemId = 'cmpext-compare-page-remove';
 
 chrome.contextMenus.create({
-  id: contextMenuComparePageRemoveId,
+  id: menuItemId,
   title: 'Удалить из сравнения',
   contexts: ['page', 'selection', 'link', 'image'],
   documentUrlPatterns: ['http://catalog.onliner.by/compare/*']
-}, function() {
+}, function () {
   // log error if failed to create context menu
   if (chrome.runtime.lastError) {
     handleError(chrome.runtime.lastError);
   }
 });
 
-chrome.contextMenus.onClicked.addListener(function(info, tab) {
-  if (info.menuItemId === contextMenuComparePageRemoveId) {
+// let content script know about menu item click
+chrome.contextMenus.onClicked.addListener(function (info, tab) {
+  if (info.menuItemId === menuItemId) {
     message.tab(tab.id, 'context');
   }
 });

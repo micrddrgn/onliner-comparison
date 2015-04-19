@@ -11,6 +11,10 @@ var dom = {
     return Array.prototype.slice.call(arraylike);
   },
 
+  all: function (node, selector) {
+    return dom.array(node.querySelectorAll(selector));
+  },
+
   closest: function (node, selector) {
     do {
       if (this.is(node, selector)) {
@@ -29,16 +33,6 @@ var dom = {
       return true;
     }
     return false;
-  },
-
-  children: function (node, cb) {
-    for (var i = 0, l = node.children.length; i < l; i++) {
-      cb(node.children[i]);
-    }
-  },
-
-  all: function (node, selector) {
-    return dom.array(node.querySelectorAll(selector));
   },
 
   delegate: function (node, eventName, selector, cb) {
@@ -67,7 +61,25 @@ var dom = {
     }
 
     query();
+  },
+
+  style: function (nodes, styles) {
+    if (nodes.length === undefined) {
+      nodes = [nodes];
+    }
+
+    this.array(nodes).forEach(function (node) {
+      Object.keys(styles).forEach(function (prop) {
+        console.log(node, node.style);
+        node.style[prop] = styles[prop];
+      });
+    });
+  },
+
+  hide: function (nodes) {
+    this.style(nodes, { display: 'none' });
   }
+
 };
 
 module.exports = dom;

@@ -29,6 +29,7 @@
     "persistent": false
   },
   "web_accessible_resources": [
-    "images/icons/16.png"
+    "images/icons/16.png",
+    "images/icon-new-tab.png"
   ]
 }

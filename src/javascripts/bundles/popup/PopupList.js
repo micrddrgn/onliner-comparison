@@ -76,6 +76,10 @@ PopupList.prototype.refresh = function () {
   }
 };
 
+PopupList.prototype.getIds = function () {
+  return this.ids;
+};
+
 PopupList.prototype.add = function (product) {
 
   var description = this.prepareDescription(product.description);

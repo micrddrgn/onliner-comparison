@@ -1,8 +1,10 @@
 'use strict';
 
 /*
-  rename event
-  simplify parsing
+  todo:
+  - rename event
+  - simplify parsing
+  - review the code
  */
 
 var message = require('../../helpers/message'),
@@ -11,8 +13,6 @@ var message = require('../../helpers/message'),
 var Toggler = require('../../lib/Toggler');
 
 var Page = require('./Page');
-
-console.log(Page, Page.prototype);
 
 function PageProduct() {
   Page.call(this);

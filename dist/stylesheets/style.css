@@ -1,13 +1,9 @@
 a.cmpext-link {
+  width: 56px;
+  height: 27px;
+  display: block;
   cursor: pointer;
-}
-
-a.cmpext-link i.cmpext-new-tab {
-  background: url('chrome-extension://__MSG_@@extension_id__/images/icon-new-tab.png') no-repeat;
-  width: 10px;
-  height: 10px;
-  display: inline-block;
-  vertical-align: top;
+  background: url(http://catalog.onliner.by/pic/btn_compare.gif);
 }
 
 .cmpext-hidden {

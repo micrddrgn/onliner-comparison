@@ -1,31 +1,24 @@
 'use strict';
 
-/*
-  finish
-  could be prettier
- */
-
 function CompareLink() {
+  this.el = this.createEl();
+}
+
+CompareLink.prototype.createEl = function () {
   var a = document.createElement('a');
   a.className = 'cmpext-link';
   a.title = 'Открыть страницу сравнения товаров в новой вкладке';
   a.target = '_blank';
-
-  var i = document.createElement('i');
-  i.className = 'cmpext-new-tab';
-  a.appendChild(i);
-
-  var img = document.createElement('img');
-  img.src = 'http://catalog.onliner.by/pic/btn_compare.gif';
-  a.appendChild(img);
-
-  a.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    console.log('click on compare link');
-  });
-
   return a;
-}
+};
+
+CompareLink.prototype.getEl = function () {
+  return this.el;
+};
+
+CompareLink.prototype.updateHref = function (ids) {
+  var url = 'http://catalog.onliner.by/compare/' + ids.join('+');
+  this.el.href = url;
+};
 
 module.exports = CompareLink;
