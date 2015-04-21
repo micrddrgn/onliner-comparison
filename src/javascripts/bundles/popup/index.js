@@ -4,7 +4,7 @@ var message = require('../../helpers/message');
 
 var CompareLink = require('../../common/CompareLink');
 
-var PopupList = require('./PopupList');
+var Cart = require('./Cart');
 
 // this script will run any time user opens a popup
 
@@ -26,13 +26,13 @@ var compareLink = new CompareLink();
 $compare.appendChild(compareLink.getEl());
 
 
-var popupList = new PopupList($list, $status);
+var cart = new Cart($list, $status);
 
-popupList.on('remove', function (id) {
+cart.on('remove', function (id) {
   message.event('remove', id, function (response) {
     if (response) {
-      popupList.remove(id);
-      compareLink.updateHref(popupList.getIds());
+      cart.remove(id);
+      compareLink.updateRef(cart.getIds());
     }
   });
 });
@@ -41,12 +41,12 @@ message.event('load', function (products) {
   if (products.length > 0) {
 
     products.forEach(function (product) {
-      popupList.add(product);
+      cart.add(product);
     });
 
-    compareLink.updateHref(popupList.getIds());
+    compareLink.updateRef(cart.getIds());
 
   } else {
-    popupList.refresh();
+    cart.refresh();
   }
 });

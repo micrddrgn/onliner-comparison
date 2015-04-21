@@ -4,7 +4,7 @@ var dom = require('../../helpers/dom');
 
 var EventEmitter = require('../../lib/EventEmitter');
 
-function PopupList($list, $status) {
+function Cart($list, $status) {
   EventEmitter.call(this);
 
   this.$list = $list;
@@ -14,10 +14,10 @@ function PopupList($list, $status) {
   this.bindListeners();
 }
 
-PopupList.prototype = Object.create(EventEmitter.prototype);
-PopupList.prototype.constructor = PopupList;
+Cart.prototype = Object.create(EventEmitter.prototype);
+Cart.prototype.constructor = Cart;
 
-PopupList.prototype.template = '' +
+Cart.prototype.template = '' +
   '<li class="product" data-id="{{id}}">' +
     '<div class="image">' +
       '<img src="{{imageUrl}}" title="{{title}}" alt="{{title}}">' +
@@ -36,7 +36,7 @@ PopupList.prototype.template = '' +
     '<div class="clear"></div>' +
   '</li>';
 
-PopupList.prototype.compile = function (data) {
+Cart.prototype.compile = function (data) {
   // copy template to a variable
   var html = this.template;
   // iterate over data keys
@@ -56,31 +56,31 @@ PopupList.prototype.compile = function (data) {
   return fragment.firstChild;
 };
 
-PopupList.prototype.statuses = {
+Cart.prototype.statuses = {
   empty: 'Товары для сравнения отсутствуют',
   loading: 'Загрузка...'
 };
 
-PopupList.prototype.showStatus = function (type) {
+Cart.prototype.showStatus = function (type) {
   this.$status.textContent = this.statuses[type];
   this.$status.classList.remove('cmpext-hidden');
 };
 
-PopupList.prototype.hideStatus = function () {
+Cart.prototype.hideStatus = function () {
   this.$status.classList.add('cmpext-hidden');
 };
 
-PopupList.prototype.refresh = function () {
+Cart.prototype.refresh = function () {
   if (this.ids.length === 0) {
     this.showStatus('empty');
   }
 };
 
-PopupList.prototype.getIds = function () {
+Cart.prototype.getIds = function () {
   return this.ids;
 };
 
-PopupList.prototype.add = function (product) {
+Cart.prototype.add = function (product) {
 
   var description = this.prepareDescription(product.description);
 
@@ -98,7 +98,7 @@ PopupList.prototype.add = function (product) {
   this.hideStatus();
 };
 
-PopupList.prototype.remove = function (id) {
+Cart.prototype.remove = function (id) {
   var index = this.ids.indexOf(id);
   if (index === -1) {
     return false;
@@ -111,8 +111,8 @@ PopupList.prototype.remove = function (id) {
   this.refresh();
 };
 
-PopupList.prototype.prepareDescription = function (description) {
-  // save compatibility with old string-like description
+Cart.prototype.prepareDescription = function (description) {
+  // compatibility with old string-like description
   if (Array.isArray(description)) {
     description = description.map(function (part) {
       var html = '<span title="' + part.title + '">';
@@ -126,13 +126,13 @@ PopupList.prototype.prepareDescription = function (description) {
   return description || '(описание отсутствует)';
 };
 
-PopupList.prototype.stateIcon = function (state) {
+Cart.prototype.stateIcon = function (state) {
   var word = state ? 'yes' : 'no';
   return '<img width="12" height="12" border="0" ' +
          'src="http://catalog.onliner.by/pic/ico_' + word + '.gif">';
 };
 
-PopupList.prototype.bindListeners = function () {
+Cart.prototype.bindListeners = function () {
 
   dom.delegate(this.$list, 'click', '.remove', function (e) {
 
@@ -143,4 +143,4 @@ PopupList.prototype.bindListeners = function () {
 
 };
 
-module.exports = PopupList;
+module.exports = Cart;

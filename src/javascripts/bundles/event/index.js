@@ -20,7 +20,7 @@ var recount = function () {
     badge.setNumber(count);
   });
   storage.ids(function (ids) {
-    message.content('change', ids);
+    message.content('ids', ids);
   });
 };
 recount();
@@ -46,6 +46,15 @@ chrome.extension.onMessage.addListener(function (request, sender, respond) {
     });
     break;
 
+  case 'addBatch':
+    storage.addBatch(request.data, function (products, err) {
+      if (err) { return respond(null, err); }
+
+      respond(products);
+      recount();
+    });
+    break;
+
   case 'remove':
     storage.remove(request.data, function (product, err) {
       if (err) { return respond(null, err); }
@@ -54,6 +63,15 @@ chrome.extension.onMessage.addListener(function (request, sender, respond) {
       recount();
 
       message.content(request.action, request.data);
+    });
+    break;
+
+  case 'removeBatch':
+    storage.removeBatch(request.data, function (products, err) {
+      if (err) { return respond(null, err); }
+
+      respond(products);
+      recount();
     });
     break;
 

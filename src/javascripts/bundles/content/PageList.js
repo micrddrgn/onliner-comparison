@@ -3,6 +3,7 @@
 /*
   todo:
     - review the code
+    - optimize
  */
 
 var dom = require('../../helpers/dom'),
@@ -31,7 +32,7 @@ PageList.prototype.render = function () {
 
   message.event('ids', function (ids) {
 
-    this.renderButtons(ids);
+    this.renderTogglers(ids);
 
     this.updateCompareLinks(ids);
 
@@ -40,7 +41,7 @@ PageList.prototype.render = function () {
   }.bind(this));
 };
 
-PageList.prototype.renderButtons = function (ids) {
+PageList.prototype.renderTogglers = function (ids) {
   var cells = dom.all(this.container, 'table td.pcheck');
 
   cells.forEach(function (oldCell, index) {
@@ -57,7 +58,7 @@ PageList.prototype.renderButtons = function (ids) {
     }
 
     var id = util.uri(link.href);
-    var isActive = ids.indexOf(id) > -1;
+    var isActive = !!~ids.indexOf(id);
 
     var toggler = new Toggler({
       className: 'cmpext',

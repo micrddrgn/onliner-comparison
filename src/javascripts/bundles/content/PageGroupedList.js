@@ -1,157 +1,326 @@
 'use strict';
 
-function PageGroupedList() {}
+var dom = require('../../helpers/dom'),
+    util = require('../../helpers/util'),
+    message = require('../../helpers/message'),
+    handleError = require('../../helpers/handleError');
 
-PageGroupedList.prototype.parse = function (row) {
-  var container = row.querySelector('td.pdescr');
+var Toggler = require('../../lib/Toggler');
 
-  var title = container.querySelector('strong.pname a').innerText;
-  var url = container.querySelector('strong.pname a').href;
-  var imageUrl = (row.querySelector('td.pimage img') || {}).src;
-  var id = url.split('/').filter(function(n) { return n; }).pop();
-  var description = container.querySelector('div').innerText
-                             .replace(', подробнее...', '');
+var Page = require('./Page');
 
-  var product = {
-    id: id,
-    url: url,
-    title: title,
-    description: description,
-    imageUrl: imageUrl
-  };
+// -----------------------------------------------------------------------------
 
-  return product;
-};
+function PageGroupedList() {
+  Page.call(this);
 
-PageGroupedList.prototype.message = function (action, data, callback) {
-  var message = { action: action, source: 'content', data: data };
-  chrome.extension.sendMessage(message, callback);
-};
+  this.products = {};
+  this.groups = {};
+}
 
-PageGroupedList.prototype.handle = function (e) {
-  e.stopPropagation();
-  e.preventDefault();
+PageGroupedList.prototype = Object.create(Page.prototype);
+PageGroupedList.prototype.constructor = PageGroupedList;
 
-  var toggler = e.target.toggler;
-  
-  var row = dom.closest(toggler.getEl(), 'tr');
-  var product = this.parse(row);
-
-  if (toggler.isActive()) {
-    this.message('removeProduct', product.id, function () {
-      toggler.toggle();
-    });
-  } else {
-    this.message('addProduct', product, function () {
-      toggler.toggle();
-    });
-  }
-};
-
-PageGroupedList.prototype.handleAll = function (e) {
-  e.stopPropagation();
-  e.preventDefault();
-  
-  var toggler = e.target.toggler;
-
-  var row = dom.closest(toggler.getEl(), 'tr');
-  var next = row.nextElementSibling;
-
-  if (toggler.isActive()) {
-
-    var els = dom.all(next, '.cmpext-toggler.active');
-    els.forEach(function (el) {
-      el.toggler.toggle(false);
-    });
-
-    toggler.toggle(false);
-
-  } else {
-    var els = dom.all(next, '.cmpext-toggler:not(.active)');
-    els.forEach(function (el) {
-      el.toggler.toggle(true);
-    });
-
-    toggler.toggle(true);
+PageGroupedList.prototype.initialize = function () {
+  this.$container = document.querySelector('[name="product_list"]');
+  if (!this.$container) {
+    return handleError('Container [name="product_list"] not found');
   }
 
+  message.event('ids', function (ids) {
+
+    this.parseProductsAndRenderTogglers(ids);
+
+    this.renderCompareLinks();
+
+    this.updateCompareLinksRef(ids);
+
+    this.bindListeners();
+
+  }.bind(this));
 };
 
-PageGroupedList.prototype.render = function () {
-  var container = document.querySelector('[name="product_list"]');
-  var cells = dom.all(container, 'table tr td.pimage');
+// -----------------------------------------------------------------------------
 
-  cells.forEach(function (cell) {
-    var row = cell.parentNode;
+PageGroupedList.prototype.parseProductsAndRenderTogglers = function (ids) {
+  // iterate over all product groups
+  var $imageCells = dom.all(this.$container, 'table tr td.pimage');
+  $imageCells.forEach(function ($imageCell) {
+    var $productRow = $imageCell.parentNode;
 
-    var moreRow = row.nextElementSibling;
+    // grab id of the group for group toggler
+    var $groupLink = $productRow.querySelector('td.pdescr strong.pname a');
+    if (!$groupLink) { return handleError('Row has no link'); }
 
-    var productRows = dom.all(moreRow, '.dev_row');
-
-    productRows.forEach(function (productRow) {
-      
-      productRow.children[0].children[1].style.display = 'none';
-      productRow.children[1].children[0].style.display = 'none';
+    var groupId = util.uri($groupLink.href);
+    var groupIds = [], groupActiveIds = [];
 
 
-      var toggler = new Toggler({ className: 'cmpext-toggler' });
-      productRow.children[1].appendChild(toggler.getEl());
+    var $configurationsRow = $productRow.nextElementSibling;
+    // get all configurations for product/group
+    var $configurationRows = dom.all($configurationsRow, '.dev_row');
+
+    $configurationRows.forEach(function ($configurationRow) {
+      // parse current configuration (product)
+      var product = {};
+      try {
+        var $pdescr = $configurationRow.querySelector('td.pdescr');
+        var $link = $pdescr.querySelector('strong.pname a');
+        product.title = $link.innerText;
+        product.url = $link.href;
+        product.imageUrl = $imageCell.querySelector('img').src;
+        product.id = util.uri(product.url);
+        product.description = $pdescr.querySelector('div').innerText
+                                .replace(', подробнее...', '');
+      } catch(e) {
+        return handleError('Failed to parse product');
+      }
+
+      // figure out if product is already in cart
+      var isActive = !!~ids.indexOf(product.id);
+
+      // populate current group with configuration id
+      groupIds.push(product.id);
+      if (isActive) { groupActiveIds.push(product.id); }
+
+      // replace first cell with our own
+      // because original one has some weird effect we don't need
+      var $emptyCell = dom.create('td.pcheck');
+      var $emptyDiv = dom.create('div', {}, { width: '110px' });
+      $emptyCell.appendChild($emptyDiv);
+      $configurationRow.replaceChild($emptyCell, $configurationRow.children[0]);
+
+      // create a cell for toggler and replace original cell
+      var $togglerCell = dom.create('td.pcheck');
+      var toggler = new Toggler({
+        className: 'cmpext',
+        isActive: isActive,
+        data: { togglerId: product.id }
+      });
+
+      $togglerCell.appendChild(toggler.getEl());
+      $configurationRow.replaceChild(
+        $togglerCell, $configurationRow.children[1]
+      );
+
+      // add product and it's toggler to current page product map
+      this.products[product.id] = {
+        data: product,
+        toggler: toggler,
+        groupId: groupId
+      };
+    }, this);
+
+    // figure out if products of current group are all in cart
+    var isGroupActive = (groupIds.length > 0 &&
+                         groupIds.length === groupActiveIds.length);
+
+    // grab product (group) checkbox container
+    // to replace it with group toggler
+    var $checkboxContainer = $imageCell.children[1];
+    var $newContainer = dom.create('div');
+
+    var groupToggler = new Toggler({
+      className: 'cmpext-group',
+      isActive: isGroupActive,
+      data: { togglerId: groupId }
     });
 
+    $newContainer.appendChild(groupToggler.getEl());
+    $imageCell.replaceChild($newContainer, $checkboxContainer);
 
-    var cb = cell.children[1].children[0];
-    var cbContainer = cb.parentNode;
-
-    dom.children(cbContainer, function (child) {
-      child.style.display = 'none';
-    });
-
-    var togglerAll = new Toggler({ className: 'cmpext-toggler-all' });
-    var el = togglerAll.getEl();
-    el.dataset.all = true;
-    cbContainer.appendChild(el);
+    // add current group to groupmap
+    this.groups[groupId] = {
+      toggler: groupToggler,
+      ids: {
+        all: groupIds,
+        active: groupActiveIds
+      }
+    };
 
   }, this);
-
-  dom.delegate(container, 'click', '.cmpext-toggler-all', this.handleAll.bind(this));
-  dom.delegate(container, 'click', '.cmpext-toggler', this.handle.bind(this));
-
-  this.drawButtons();
 };
 
-PageGroupedList.prototype.drawButtons = function () {
-  var container = document.querySelector('[name="product_list"]');
-  var rows = dom.all(container, 'div.pcompbtn > table tr');
+PageGroupedList.prototype.renderCompareLinks = function () {
+  var $compareRows = dom.all(this.$container, 'div.pcompbtn > table tr');
 
-  rows.forEach(function (row) {
-    if (row.children.length === 4) {
-      row.children[1].style.display = 'none';
-      row.children[2].style.display = 'none';
-    } else if (row.children.length === 3) {
-      row.children[1].style.display = 'none';
+  // because original compare buttons are weirdly placed
+  // hide some stuff to make our compare buttons look nice
+  $compareRows.forEach(function ($compareRow) {
+
+    var $newRow = dom.create('tr');
+
+    var $newCompareCell = dom.create('td');
+    $newCompareCell.appendChild(this.createCompareLink());
+
+    var $newDescCell = $compareRow.lastElementChild.cloneNode(true);
+
+    $newRow.appendChild($newCompareCell);
+    $newRow.appendChild($newDescCell);
+
+    $compareRow.parentNode.replaceChild($newRow, $compareRow);
+  }, this);
+};
+
+PageGroupedList.prototype.bindListeners = function () {
+  dom.delegate(this.$container, 'click', '.cmpext',
+               this.onToggle.bind(this));
+
+  dom.delegate(this.$container, 'click', '.cmpext-group',
+               this.onToggleAll.bind(this));
+};
+
+// -----------------------------------------------------------------------------
+
+PageGroupedList.prototype.onToggle = function (e) {
+  // extract toggler from element
+  var toggler = e.target.toggler;
+  if (!toggler) {
+    return true;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+
+  // get product id from the toggler
+  var id = toggler.getEl().dataset.togglerId;
+
+  // find product in the list of parsed products
+  var product = this.products[id];
+  if (!product) { return handleError('Toggled product not found on a page'); }
+
+  // add/remove a product to/from database
+  if (toggler.isActive()) {
+
+    message.event('remove', id, function () {
+
+      // find a group for current product and remove this product
+      var group = this.groups[product.groupId];
+      var index = group.ids.active.indexOf(id);
+
+      if (~index) {
+        group.ids.active.splice(index, 1);
+      }
+
+      // untoggle group toggler if no more products from this group are in
+      if (group.ids.active.length === 0) {
+        group.toggler.toggle(false);
+      }
+
+      toggler.toggle(false);
+
+    }.bind(this));
+
+  } else {
+
+    message.event('add', product.data, function () {
+
+      // find a group for current product and add this product
+      var group = this.groups[product.groupId];
+      var index = group.ids.active.indexOf(id);
+
+      if (!~index) {
+        group.ids.active.push(product.data.id);
+      }
+
+      // toggle group toggler if all products from this group are in
+      if (group.ids.active.length === group.ids.all.length) {
+        group.toggler.toggle(true);
+      }
+
+      toggler.toggle(true);
+
+    }.bind(this));
+
+  }
+};
+
+PageGroupedList.prototype.onToggleAll = function (e) {
+  var toggler = e.target.toggler;
+  if (!toggler) {
+    return true;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+
+  // get group id from the toggler
+  var id = toggler.getEl().dataset.togglerId;
+
+  // find group in the list of created groups
+  var group = this.groups[id];
+  if (!group) { return handleError('Toggled group not found on a page'); }
+
+  // add/remove groups of products to/from database
+  if (toggler.isActive()) {
+    if (group.ids.active.length !== 0) {
+
+      // remove all ids that are active now
+      message.event('removeBatch', group.ids.active, function () {
+
+        // get only active parsed products
+        var products = util.pick(this.products, group.ids.active);
+
+        // untoggle their togglers
+        products.forEach(function (product) {
+          product.toggler.toggle(false);
+        });
+        toggler.toggle(false);
+
+        // reset a list because all products from this group are now removed
+        group.ids.active = [];
+
+      }.bind(this));
+
     }
+  } else {
+    if (group.ids.active.length !== group.ids.all.length) {
 
-    row.children[0].children[0].style.display = 'none';
+      // calculate a list of "inactive" ids
+      var inactiveIds = util.subtract(group.ids.all, group.ids.active);
 
-    row.children[0].appendChild(this.compareLink());
+      // pick only inactive products to add
+      var products = util.pick(this.products, inactiveIds);
+      var data = util.pluck(products, 'data');
 
-  }, this);
+      message.event('addBatch', data, function () {
+        // toggle all inactive products
+        products.forEach(function (product) {
+          product.toggler.toggle(true);
+        });
+        toggler.toggle(true);
+
+        // now all products from this group are in
+        group.ids.active = group.ids.all;
+
+      }.bind(this));
+
+    }
+  }
 };
 
-PageGroupedList.prototype.compareLink = function () {
-  var img = document.createElement('img');
-  img.src = 'http://catalog.onliner.by/pic/btn_compare.gif';
+PageGroupedList.prototype.onRemove = function (id) {
+  // find product in a list of parsed products
+  var product = this.products[id];
+  if (!product) {
+    return handleError('Removed product not found on a page');
+  }
 
-  var a = document.createElement('a');
-  a.className = '';
-  a.title = 'Открыть страницу сравнения товаров в текущей вкладке';
-  a.appendChild(img);
+  // find a group for this product
+  var group = this.groups[product.groupId];
+  if (!group) {
+    return handleError('Removed product group not found on a page');
+  }
 
-  a.addEventListener('click', function (e) {
-    e.preventDefault();
+  // remove this product from the list of group's active products
+  var index = group.ids.active.indexOf(id);
+  if (~index) {
+    group.ids.active.splice(index, 1);
+  }
 
-    console.log('click on compare link');
-  });
-
-  return a;
+  // untoggle both group and product togglers
+  if (group.ids.active.length === 0) {
+    group.toggler.toggle(false);
+  }
+  product.toggler.toggle(false);
 };
+
+module.exports = PageGroupedList;

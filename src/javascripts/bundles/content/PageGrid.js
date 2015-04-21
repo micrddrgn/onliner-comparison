@@ -2,15 +2,124 @@
 
 /*
   todo:
+    - review the code
+    - optimize
  */
 
-function PageGrid() {}
+var dom = require('../../helpers/dom'),
+    util = require('../../helpers/util'),
+    message = require('../../helpers/message'),
+    handleError = require('../../helpers/handleError');
 
-PageGrid.prototype.parse = function (cell) {
+var Toggler = require('../../lib/Toggler');
+
+var Page = require('./Page');
+
+function PageGrid() {
+  Page.call(this);
+
+  this.on('remove', this.onRemove);
+}
+
+PageGrid.prototype = Object.create(Page.prototype);
+PageGrid.prototype.constructor = PageGrid;
+
+PageGrid.prototype.render = function () {
+  var cells = dom.all(document, '.pgimage');
+  if (!cells.length) {
+    return handleError('.pgimage cells not found');
+  }
+
+  this.container = dom.closest(cells[0], 'table');
+  if (!this.container) {
+    return handleError('Container table for .pgimage not found');
+  }
+
+  message.event('ids', function (ids) {
+
+    this.renderButtons(ids);
+
+    this.updateCompareLinks(ids);
+
+    this.container.addEventListener('click', this.onToggle.bind(this));
+
+  }.bind(this));
+};
+
+PageGrid.prototype.renderButtons = function (ids) {
+  var cells = dom.all(this.container, '.pgimage');
+
+  cells.forEach(function (oldCell) {
+    var row = oldCell.parentNode;
+    var compareRow = row.previousElementSibling;
+
+    var link = oldCell.querySelector('a');
+    if (!link) {
+      return handleError('Cell has no link');
+    }
+
+    var index = dom.array(row.children).indexOf(oldCell);
+    if (index === -1) {
+      return handleError('Cell not found within row');
+    }
+
+    var compareCell = compareRow.querySelectorAll('td.pgcheck')[index];
+
+    var cell = document.createElement('td');
+    cell.className = 'pgcheck';
+
+    var id = util.uri(link.href);
+    var isActive = ids.indexOf(id) > -1;
+
+    var toggler = new Toggler({
+      className: 'cmpext',
+      isActive: isActive,
+      data: { toggler: id }
+    });
+
+    cell.appendChild(toggler.getEl());
+
+    compareCell.parentNode.replaceChild(cell, compareCell);
+  }, this);
+
+  var compareCells = dom.all(document, '.pgcompbtn table td.pgcheck');
+  compareCells.forEach(function (compareCell) {
+
+    var newCell = document.createElement('td');
+    newCell.className = 'pcheck';
+    newCell.appendChild(this.createCompareLink());
+
+    compareCell.parentNode.replaceChild(newCell, compareCell);
+  }, this);
+};
+
+PageGrid.prototype.onToggle = function (e) {
+  var toggler = e.target.toggler;
+  if (!toggler) {
+    return true;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+
+  var cell = dom.closest(toggler.getEl(), 'td');
+  var product = this.parseProduct(cell);
+
+  if (toggler.isActive()) {
+    message.event('remove', product.id, function () {
+      toggler.toggle(false);
+    });
+  } else {
+    message.event('add', product, function () {
+      toggler.toggle(true);
+    });
+  }
+};
+
+PageGrid.prototype.parseProduct = function (cell) {
   var row = cell.parentNode;
-  var siblings = row.querySelectorAll('td.pgcheck');
+  var siblings = dom.all(row, 'td.pgcheck');
 
-  var index = Array.prototype.slice.call(siblings).indexOf(cell);
+  var index = siblings.indexOf(cell);
 
   var imageRow = row.nextElementSibling;
   var imageCell = imageRow.children[index];
@@ -20,7 +129,7 @@ PageGrid.prototype.parse = function (cell) {
   var title = nameCell.querySelector('div.pgname a').innerText;
   var url = nameCell.querySelector('div.pgname a').href;
   var imageUrl = imageCell.querySelector('img').src;
-  var id = url.split('/').filter(function(n) { return n; }).pop();
+  var id = util.uri(url);
   var description = '';
 
   var product = {
@@ -34,93 +143,10 @@ PageGrid.prototype.parse = function (cell) {
   return product;
 };
 
-PageGrid.prototype.id = function (cell) {
-  return cell.querySelector('a').href.split('/')
-             .filter(function(n) { return n; }).pop();
+PageGrid.prototype.onRemove = function (id) {
+  var target = document.querySelector('[data-toggler="' + id + '"]');
+  if (!target) { return handleError('Removed product not found on a page'); }
+  target.toggler.toggle(false);
 };
 
-PageGrid.prototype.message = function (action, data, callback) {
-  var message = { action: action, source: 'content', data: data };
-  chrome.extension.sendMessage(message, callback);
-};
-
-PageGrid.prototype.handler = function (e) {
-  var toggler = e.target.toggler;
-  if (!toggler) {
-    return true;
-  }
-  e.stopPropagation();
-  e.preventDefault();
-
-  var cell = dom.closest(toggler.getEl(), 'td');
-  var product = this.parse(cell);
-
-  if (toggler.isActive()) {
-   this.message('removeProduct', product.id, function () {
-      toggler.toggle();
-    });
-  } else {
-    this.message('addProduct', product, function () {
-      toggler.toggle();
-    });
-  }
-};
-
-PageGrid.prototype.render = function () {
-  var cells = as.array(document.querySelectorAll('.pgimage'));
-  var container = dom.closest(cells[0], 'table');
-
-  cells.forEach(function (cell) {
-    var row = cell.parentNode;
-    var compareRow = row.previousElementSibling;
-
-    var index = as.array(row.children).indexOf(cell);
-    var compareCell = compareRow.querySelectorAll('td.pgcheck')[index];
-
-    var id = this.id(cell);
-
-    dom.children(compareCell, function (child) {
-      child.style.display = 'none';
-    });
-
-    var toggler = new Toggler();
-    compareCell.appendChild(toggler.getEl());
-
-  }, this);
-
-  container.addEventListener('click', this.handler.bind(this));
-
-  this.drawButtons();
-};
-
-
-PageGrid.prototype.drawButtons = function () {
-  var cells = as.array(document.querySelectorAll('.pgcompbtn table td.pgcheck'));
-  cells.forEach(function (cell) {
-
-    dom.children(cell, function (child) {
-      child.style.display = 'none';
-    });
-
-    cell.appendChild(this.compareLink());
-
-  }, this);
-};
-
-PageGrid.prototype.compareLink = function () {
-  var img = document.createElement('img');
-  img.src = 'http://catalog.onliner.by/pic/btn_compare.gif';
-
-  var a = document.createElement('a');
-  a.className = '';
-  a.title = 'Открыть страницу сравнения товаров в текущей вкладке';
-  a.appendChild(img);
-
-  a.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    console.log('click on compare link');
-  });
-
-  return a;
-};
+module.exports = PageGrid;

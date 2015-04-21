@@ -8,10 +8,12 @@ var pages = {
   product: require('./PageProduct'),
   compare: require('./PageCompare'),
   list: require('./PageList'),
-  grid: require('./PageGrid')
+  grid: require('./PageGrid'),
+  groupedList: require('./PageGroupedList')
 };
 
-// create IIFE to be able to return from it if something goes wrong in the middle
+// create IIFE to be able to call return from it
+// if something goes wrong in the process to stop execution
 (function () {
   var pageDetector = new PageDetector({
     'list': {
@@ -47,7 +49,7 @@ var pages = {
   if (!page) { return handleError('Failed to create a page'); }
   console.log('Page created:', page);
 
-  page.render();
+  page.initialize();
 
   chrome.extension.onMessage.addListener(function (request) {
     switch(request.action) {
@@ -57,8 +59,8 @@ var pages = {
     case 'context':
       page.emit('context');
       break;
-    case 'change':
-      page.emit('change', request.data);
+    case 'ids':
+      page.emit('ids', request.data);
       break;
     default:
       return false;

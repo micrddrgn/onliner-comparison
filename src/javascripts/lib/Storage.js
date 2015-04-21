@@ -39,11 +39,31 @@ Storage.prototype.add = function (item, cb) {
   }.bind(this));
 };
 
+Storage.prototype.addBatch = function (items, cb) {
+  if (!Array.isArray(items)) {
+    return cb(null, new Error('AddBatch requires array'));
+  }
+  this._get(function (oldItems) {
+
+    var validItems = items.filter(this.isValid);
+    if (!validItems.length) {
+      return cb([]);
+    }
+
+    var newItems = oldItems.concat(validItems);
+
+    this._set(newItems, function () {
+      cb(validItems);
+    });
+
+  }.bind(this));
+};
+
 Storage.prototype.remove = function (id, cb) {
   this._get(function (items) {
 
     var index = this._indexOfSync(items, id);
-    if (index === -1) {
+    if (!~index) {
       return cb(null, new Error('Item not found'));
     }
 
@@ -53,6 +73,29 @@ Storage.prototype.remove = function (id, cb) {
 
     this._set(items, function () {
       cb(item);
+    });
+
+  }.bind(this));
+};
+
+Storage.prototype.removeBatch = function (ids, cb) {
+  if (!Array.isArray(ids)) {
+    return cb(null, new Error('RemoveBatch requires array'));
+  }
+  this._get(function (oldItems) {
+
+    var newItems = [], removedItems = [];
+
+    oldItems.forEach(function (item) {
+      if (~ids.indexOf(item.id)) {
+        removedItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+
+    this._set(newItems, function () {
+      cb(removedItems);
     });
 
   }.bind(this));
@@ -85,7 +128,7 @@ Storage.prototype.find = function (id, cb) {
   this._get(function (items) {
 
     var index = this._indexOfSync(items, id);
-    if (index === -1) {
+    if (!~index) {
       return cb(null, new Error('Item not found'));
     }
 
@@ -111,7 +154,6 @@ Storage.prototype._get = function (cb) {
     var items = data[this.namespace] || [];
     this.cache.count = items.length;
     this.cache.ids = this._idsSync(items);
-    console.log('get', this.cache.ids);
     cb(items);
   }.bind(this));
 };
@@ -122,7 +164,6 @@ Storage.prototype._set = function (items, cb) {
   this.storage.set(data, function () {
     this.cache.count = items.length;
     this.cache.ids = this._idsSync(items);
-    console.log('set', this.cache.ids);
     cb(items);
   }.bind(this));
 };

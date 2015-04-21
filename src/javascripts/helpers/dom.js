@@ -16,12 +16,13 @@ var dom = {
   },
 
   closest: function (node, selector) {
-    do {
+    node = node.parentNode;
+    while(node) {
       if (this.is(node, selector)) {
         return node;
       }
       node = node.parentNode;
-    } while (node);
+    }
     return null;
   },
 
@@ -63,6 +64,18 @@ var dom = {
     query();
   },
 
+  attr: function (nodes, attrs) {
+    if (nodes.length === undefined) {
+      nodes = [nodes];
+    }
+
+    this.array(nodes).forEach(function (node) {
+      Object.keys(attrs).forEach(function (attr) {
+        node[attr] = attrs[attr];
+      });
+    });
+  },
+
   style: function (nodes, styles) {
     if (nodes.length === undefined) {
       nodes = [nodes];
@@ -70,7 +83,6 @@ var dom = {
 
     this.array(nodes).forEach(function (node) {
       Object.keys(styles).forEach(function (prop) {
-        console.log(node, node.style);
         node.style[prop] = styles[prop];
       });
     });
@@ -78,6 +90,28 @@ var dom = {
 
   hide: function (nodes) {
     this.style(nodes, { display: 'none' });
+  },
+
+  create: function (selector, attrs, styles) {
+    var parts = selector.split('.');
+
+    var tagName = parts[0] || 'div';
+
+    var node = document.createElement(tagName);
+
+    if (parts.length > 1) {
+      node.className = parts.slice(1).join(' ');
+    }
+
+    if (attrs !== undefined) {
+      this.attr(node, attrs);
+    }
+
+    if (styles !== undefined) {
+      this.style(node, styles);
+    }
+
+    return node;
   }
 
 };

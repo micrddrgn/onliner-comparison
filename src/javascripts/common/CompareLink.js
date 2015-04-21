@@ -16,7 +16,7 @@ CompareLink.prototype.getEl = function () {
   return this.el;
 };
 
-CompareLink.prototype.updateHref = function (ids) {
+CompareLink.prototype.updateRef = function (ids) {
   var url = 'http://catalog.onliner.by/compare/' + ids.join('+');
   this.el.href = url;
 };
