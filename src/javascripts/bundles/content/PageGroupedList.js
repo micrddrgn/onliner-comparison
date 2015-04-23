@@ -14,7 +14,6 @@ var Page = require('./Page');
 function PageGroupedList() {
   Page.call(this);
 
-  this.products = {};
   this.groups = {};
 }
 
@@ -29,7 +28,7 @@ PageGroupedList.prototype.initialize = function () {
 
   message.event('ids', function (ids) {
 
-    this.parseProductsAndRenderTogglers(ids);
+    this.parse(ids);
 
     this.renderCompareLinks();
 
@@ -42,7 +41,7 @@ PageGroupedList.prototype.initialize = function () {
 
 // -----------------------------------------------------------------------------
 
-PageGroupedList.prototype.parseProductsAndRenderTogglers = function (ids) {
+PageGroupedList.prototype.parse = function (ids) {
   // iterate over all product groups
   var $imageCells = dom.all(this.$container, 'table tr td.pimage');
   $imageCells.forEach(function ($imageCell) {
@@ -68,8 +67,8 @@ PageGroupedList.prototype.parseProductsAndRenderTogglers = function (ids) {
         var $link = $pdescr.querySelector('strong.pname a');
         product.title = $link.innerText;
         product.url = $link.href;
-        product.imageUrl = $imageCell.querySelector('img').src;
         product.id = util.uri(product.url);
+        product.imageUrl = $imageCell.querySelector('img').src;
         product.description = $pdescr.querySelector('div').innerText
                                 .replace(', подробнее...', '');
       } catch(e) {
@@ -93,9 +92,10 @@ PageGroupedList.prototype.parseProductsAndRenderTogglers = function (ids) {
       // create a cell for toggler and replace original cell
       var $togglerCell = dom.create('td.pcheck');
       var toggler = new Toggler({
+        isActive: isActive
+      }, {
         className: 'cmpext',
-        isActive: isActive,
-        data: { togglerId: product.id }
+        dataset: { togglerId: product.id }
       });
 
       $togglerCell.appendChild(toggler.getEl());
@@ -121,9 +121,10 @@ PageGroupedList.prototype.parseProductsAndRenderTogglers = function (ids) {
     var $newContainer = dom.create('div');
 
     var groupToggler = new Toggler({
+      isActive: isGroupActive
+    }, {
       className: 'cmpext-group',
-      isActive: isGroupActive,
-      data: { togglerId: groupId }
+      dataset: { togglerId: groupId }
     });
 
     $newContainer.appendChild(groupToggler.getEl());

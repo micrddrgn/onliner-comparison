@@ -16,6 +16,10 @@ function Page() {
 
   EventEmitter.call(this);
 
+  // all products parsed on the page
+  // should be added to this object, with id as a key
+  this.products = {};
+
   // store all created compare links
   this.compareLinks = [];
   // when 'ids' event is fired - it will give a list of current ids

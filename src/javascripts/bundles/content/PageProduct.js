@@ -1,126 +1,149 @@
 'use strict';
 
-/*
-  todo:
-  - rename event
-  - simplify parsing
-  - review the code
- */
-
-var message = require('../../helpers/message'),
-    dom = require('../../helpers/dom');
+var dom = require('../../helpers/dom'),
+    util = require('../../helpers/util'),
+    message = require('../../helpers/message'),
+    handleError = require('../../helpers/handleError');
 
 var Toggler = require('../../lib/Toggler');
 
 var Page = require('./Page');
 
+// -----------------------------------------------------------------------------
+
 function PageProduct() {
   Page.call(this);
-
-  this.on('remove', this.untoggle);
 }
 
 PageProduct.prototype = Object.create(Page.prototype);
 PageProduct.prototype.constructor = PageProduct;
 
-PageProduct.prototype.parse = function () {
-  var container = document.querySelector('.b-offers-desc');
+PageProduct.prototype.initialize = function () {
+  this.$container = document.querySelector('.product-primary-i');
+  if (!this.$container) {
+    return handleError('Container .product-primary-i not found');
+  }
 
-  var title = document.querySelector('.product-header .b-offers-heading .b-offers-title').innerText;
-  var url = container.querySelector('.b-offers-desc__leave-review').href.split('/').slice(0, -2).join('/');
-  var imageUrl = container.querySelector('.b-offers-desc__figure .b-offers-desc__figure-wrap img').src;
-  var id = url.split('/').filter(function(n) { return n; }).pop();
-  var description = [];
+  message.event('ids', function (ids) {
 
-  var descriptionRows = document.querySelectorAll('.product-specs .product-specs__group--short table tr');
-  if (descriptionRows.length > 0) {
-    for (var i = 0; i < descriptionRows.length; i++) {
-      var descriptionRow = descriptionRows[i];
+    this.parse(ids);
 
-      var descriptionCell = descriptionRow.children[1];
+    this.bindListeners();
 
-      var descriptionValue = null;
-      // check if a cell contains a 'positive checkmark'
-      if (descriptionCell.querySelector('span.i-tip')) {
-        descriptionValue = true;
-      // check if a cell contains a 'negative cross'
-      } else if (descriptionCell.querySelector('span.i-x')) {
-        descriptionValue = false;
-      }
+  }.bind(this));
+};
 
-      // check if a text is a representable information
-      var descriptionText = descriptionCell.textContent.trim();
-      if (descriptionValue === null && (!descriptionText || descriptionText.toLowerCase() === 'нет данных')) {
-        continue;
-      }
+PageProduct.prototype.parse = function (ids) {
+  // parse current product
+  var product = {};
+  try {
+    var $desc = this.$container.querySelector('.b-offers-desc');
+    var $link = $desc.querySelector('.b-offers-desc__leave-review');
 
-      var descriptionTitle = descriptionRow.children[0].innerText.trim();
+    product.title = document.querySelector('.b-offers-title').innerText;
+    product.url = util.cut($link.href, 1);
+    product.id = util.uri(product.url);
+    product.imageUrl = $desc.querySelector('#device-header-image').src;
+    product.description = [];
 
-      description.push({
-        title: descriptionTitle,
-        text: descriptionText,
-        value: descriptionValue
+    var $descriptionRows = dom
+          .all(this.$container, '.product-specs__group--short table tr');
+
+    if ($descriptionRows.length > 0) {
+      $descriptionRows.forEach(function ($descriptionRow) {
+        var $descriptionCell = $descriptionRow.children[1];
+
+        var descriptionValue = null;
+        // check if a cell contains a 'positive checkmark'
+        if ($descriptionCell.querySelector('span.i-tip')) {
+          descriptionValue = true;
+        // check if a cell contains a 'negative cross'
+        } else if ($descriptionCell.querySelector('span.i-x')) {
+          descriptionValue = false;
+        }
+
+        // check if a text is a representable information
+        var descriptionText = $descriptionCell.textContent.trim();
+        if (descriptionValue === null &&
+          (!descriptionText || descriptionText.toLowerCase() === 'нет данных')
+        ) {
+          return;
+        }
+
+        var descriptionTitle = $descriptionRow.children[0].innerText.trim();
+
+        product.description.push({
+          title: descriptionTitle,
+          text: descriptionText,
+          value: descriptionValue
+        });
       });
     }
+
+
+  } catch (e) {
+    return handleError('Failed to parse product');
   }
 
-  var product = {
-    id: id,
-    url: url,
-    title: title,
-    description: description,
-    imageUrl: imageUrl
-  };
+  // figure out if product is already in cart
+  var isActive = !!~ids.indexOf(product.id);
 
-  return product;
+  var $rating = document.querySelector('.b-offers-desc__info-rating');
+
+  var toggler = new Toggler({
+    isActive: isActive
+  }, {
+    className: 'cmpext',
+    dataset: { togglerId: product.id }
+  });
+
+  $rating.appendChild(toggler.getEl());
+
+  this.products[product.id] = {
+    data: product,
+    toggler: toggler
+  };
 };
 
-PageProduct.prototype.untoggle = function (id) {
-  var target = document.querySelector('[data-toggler="' + id + '"]');
-  if (!target) {
+PageProduct.prototype.bindListeners = function () {
+  dom.delegate(this.$container, 'click', '.cmpext', this.onToggle.bind(this));
+};
+
+// -----------------------------------------------------------------------------
+
+PageProduct.prototype.onToggle = function (e) {
+  var toggler = e.target.toggler;
+  if (!toggler) {
     return true;
   }
-  target.toggler.toggle(false);
-};
-
-PageProduct.prototype.handle = function (e) {
   e.stopPropagation();
   e.preventDefault();
 
-  var toggler = e.target.toggler;
-  var product = this.parse();
+  // get product id from the toggler
+  var id = toggler.getEl().dataset.togglerId;
+
+  // find product in the list of parsed products
+  var product = this.products[id];
+  if (!product) { return handleError('Toggled product not found on a page'); }
 
   if (toggler.isActive()) {
-    message.event('remove', product.id, function () {
+    message.event('remove', id, function () {
       toggler.toggle(false);
     });
   } else {
-    message.event('add', product, function () {
+    message.event('add', product.data, function () {
       toggler.toggle(true);
     });
   }
 };
 
-PageProduct.prototype.id = function (a, skip) {
-  var parts = a.href.split('/').filter(function (n) { return n; });
-  var n = parts.length - 1;
-  if (skip) { n -= skip; }
-  return parts[n];
-};
-
-PageProduct.prototype.render = function () {
-  var container = document.querySelector('.b-offers-desc__info-rating');
-
-  var id = this.id(container.querySelector('a'), 1);
-
-  var toggler = new Toggler({
-    className: 'cmpext-toggler',
-    data: { toggler: id }
-  });
-
-  container.appendChild(toggler.getEl());
-
-  dom.delegate(container, 'click', '.cmpext-toggler', this.handle.bind(this));
+PageProduct.prototype.onRemove = function (id) {
+  // find product in a list of parsed products
+  var product = this.products[id];
+  if (!product) {
+    return handleError('Removed product not found on a page');
+  }
+  product.toggler.toggle(false);
 };
 
 module.exports = PageProduct;

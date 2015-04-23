@@ -1,11 +1,5 @@
 'use strict';
 
-/*
-  todo:
-    - review the code
-    - optimize
- */
-
 var dom = require('../../helpers/dom'),
     util = require('../../helpers/util'),
     message = require('../../helpers/message'),
@@ -15,65 +9,91 @@ var Toggler = require('../../lib/Toggler');
 
 var Page = require('./Page');
 
+// -----------------------------------------------------------------------------
+
 function PageList() {
   Page.call(this);
-
-  this.on('remove', this.onRemove);
 }
 
 PageList.prototype = Object.create(Page.prototype);
 PageList.prototype.constructor = PageList;
 
-PageList.prototype.render = function () {
-  this.container = document.querySelector('[name="product_list"]');
-  if (!this.container) {
+PageList.prototype.initialize = function () {
+  this.$container = document.querySelector('[name="product_list"]');
+  if (!this.$container) {
     return handleError('Container [name="product_list"] not found');
   }
 
   message.event('ids', function (ids) {
 
-    this.renderTogglers(ids);
+    this.parse(ids);
 
-    this.updateCompareLinks(ids);
+    this.updateCompareLinksRef(ids);
 
-    this.container.addEventListener('click', this.onToggle.bind(this));
+    this.bindListeners();
 
   }.bind(this));
 };
 
-PageList.prototype.renderTogglers = function (ids) {
-  var cells = dom.all(this.container, 'table td.pcheck');
+// -----------------------------------------------------------------------------
 
-  cells.forEach(function (oldCell, index) {
-    var row = oldCell.parentNode;
+PageList.prototype.parse = function (ids) {
+  var $checkCells = dom.all(this.$container, 'table td.pcheck');
 
-    var link = row.querySelector('td.pdescr strong.pname a');
-    if (!link) { return handleError('Row has no link'); }
+  // iterate over all products on a page
+  $checkCells.forEach(function ($checkCell, index) {
+    var $productRow = $checkCell.parentNode;
 
-    var cell = document.createElement('td');
-    cell.className = 'pcheck';
+    // parse current product
+    var product = {};
+    try {
+      var $pdescr = $productRow.querySelector('td.pdescr');
+      var $link = $pdescr.querySelector('strong.pname a');
+      product.title = $link.innerText;
+      product.url = $link.href;
+      product.id = util.uri(product.url);
+      product.imageUrl = $productRow.querySelector('td.pimage img').src;
+      product.description = $pdescr.querySelector('div').innerText
+                              .replace(', подробнее...', '');
+    } catch(e) {
+      return handleError('Failed to parse product');
+    }
+
+    var $newCell = dom.create('td.pcheck');
 
     if (index === 0) {
-      cell.appendChild(this.createCompareLink());
+      $newCell.appendChild(this.createCompareLink());
     }
 
-    var id = util.uri(link.href);
-    var isActive = !!~ids.indexOf(id);
+    // figure out if product is already in cart
+    var isActive = !!~ids.indexOf(product.id);
 
     var toggler = new Toggler({
+      isActive: isActive
+    }, {
       className: 'cmpext',
-      isActive: isActive,
-      data: { toggler: id }
+      dataset: { togglerId: product.id }
     });
-    cell.appendChild(toggler.getEl());
+    $newCell.appendChild(toggler.getEl());
 
-    if (index === cells.length - 1) {
-      cell.appendChild(this.createCompareLink());
+    if (index === $checkCells.length - 1) {
+      $newCell.appendChild(this.createCompareLink());
     }
 
-    row.replaceChild(cell, oldCell);
+    $productRow.replaceChild($newCell, $checkCell);
+
+    this.products[product.id] = {
+      data: product,
+      toggler: toggler
+    };
   }, this);
 };
+
+PageList.prototype.bindListeners = function () {
+  this.$container.addEventListener('click', this.onToggle.bind(this));
+};
+
+// -----------------------------------------------------------------------------
 
 PageList.prototype.onToggle = function (e) {
   var toggler = e.target.toggler;
@@ -83,44 +103,31 @@ PageList.prototype.onToggle = function (e) {
   e.stopPropagation();
   e.preventDefault();
 
-  var row = dom.closest(toggler.getEl(), 'tr');
-  var product = this.parseProduct(row);
+  // get product id from the toggler
+  var id = toggler.getEl().dataset.togglerId;
+
+  // find product in the list of parsed products
+  var product = this.products[id];
+  if (!product) { return handleError('Toggled product not found on a page'); }
 
   if (toggler.isActive()) {
-    message.event('remove', product.id, function () {
+    message.event('remove', id, function () {
       toggler.toggle(false);
     });
   } else {
-    message.event('add', product, function () {
+    message.event('add', product.data, function () {
       toggler.toggle(true);
     });
   }
 };
 
-PageList.prototype.parseProduct = function (row) {
-  var container = row.querySelector('td.pdescr');
-
-  var title = container.querySelector('strong.pname a').innerText;
-  var url = container.querySelector('strong.pname a').href;
-  var imageUrl = (row.querySelector('td.pimage img') || {}).src;
-  var id = util.uri(url);
-  var description = container.querySelector('div').innerText
-                             .replace(', подробнее...', '');
-  var product = {
-    id: id,
-    url: url,
-    title: title,
-    description: description,
-    imageUrl: imageUrl
-  };
-
-  return product;
-};
-
 PageList.prototype.onRemove = function (id) {
-  var target = document.querySelector('[data-toggler="' + id + '"]');
-  if (!target) { return handleError('Removed product not found on a page'); }
-  target.toggler.toggle(false);
+  // find product in a list of parsed products
+  var product = this.products[id];
+  if (!product) {
+    return handleError('Removed product not found on a page');
+  }
+  product.toggler.toggle(false);
 };
 
 module.exports = PageList;

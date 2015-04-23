@@ -4,11 +4,24 @@ var util = {
 
   extend: function (dest, source) {
     for (var key in source) {
-      if (Object.hasOwnProperty.call(source)) {
-        dest[key] = source[key];
+      if (Object.hasOwnProperty.call(source, key)) {
+        if (source[key].toString() === '[object Object]') {
+          dest[key] = this.extend(dest[key], source[key]);
+        } else {
+          dest[key] = source[key];
+        }
       }
     }
     return dest;
+  },
+
+  defaults: function (obj, defaults) {
+    for (var key in defaults) {
+      if (!Object.hasOwnProperty.call(obj)) {
+        obj[key] = defaults[key];
+      }
+    }
+    return obj;
   },
 
   pick: function (obj, keys) {
@@ -55,6 +68,12 @@ var util = {
     index = index || 0;
     var parts = url.split('/').filter(function (n) { return n; });
     return parts[parts.length - 1 - index];
+  },
+
+  cut: function (url, index) {
+    index = index || 0;
+    var parts = url.split('/').filter(function (n) { return n; });
+    return parts.slice(0, parts.length - 1 - index).join('/');
   }
 };
 

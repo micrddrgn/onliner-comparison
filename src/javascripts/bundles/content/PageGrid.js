@@ -1,11 +1,5 @@
 'use strict';
 
-/*
-  todo:
-    - review the code
-    - optimize
- */
-
 var dom = require('../../helpers/dom'),
     util = require('../../helpers/util'),
     message = require('../../helpers/message'),
@@ -15,83 +9,107 @@ var Toggler = require('../../lib/Toggler');
 
 var Page = require('./Page');
 
+// -----------------------------------------------------------------------------
+
 function PageGrid() {
   Page.call(this);
-
-  this.on('remove', this.onRemove);
 }
 
 PageGrid.prototype = Object.create(Page.prototype);
 PageGrid.prototype.constructor = PageGrid;
 
-PageGrid.prototype.render = function () {
-  var cells = dom.all(document, '.pgimage');
-  if (!cells.length) {
-    return handleError('.pgimage cells not found');
+PageGrid.prototype.initialize = function () {
+  var $imageCell = document.querySelector('.pgimage');
+  if (!$imageCell) {
+    return handleError('Container child .pgimage not found');
   }
 
-  this.container = dom.closest(cells[0], 'table');
-  if (!this.container) {
-    return handleError('Container table for .pgimage not found');
+  this.$container = dom.closest($imageCell, 'table');
+  if (!this.$container) {
+    return handleError('Container for .pgimage not found');
   }
 
   message.event('ids', function (ids) {
 
-    this.renderButtons(ids);
+    this.parse(ids);
 
-    this.updateCompareLinks(ids);
+    this.renderCompareLinks();
 
-    this.container.addEventListener('click', this.onToggle.bind(this));
+    this.updateCompareLinksRef(ids);
+
+    this.bindListeners();
 
   }.bind(this));
 };
 
-PageGrid.prototype.renderButtons = function (ids) {
-  var cells = dom.all(this.container, '.pgimage');
+// -----------------------------------------------------------------------------
 
-  cells.forEach(function (oldCell) {
-    var row = oldCell.parentNode;
-    var compareRow = row.previousElementSibling;
+PageGrid.prototype.parse = function (ids) {
+  var $imageCells = dom.all(this.$container, '.pgimage');
 
-    var link = oldCell.querySelector('a');
-    if (!link) {
-      return handleError('Cell has no link');
+  // iterate over all products on a page
+  $imageCells.forEach(function ($imageCell) {
+
+    // parse current product
+    var product = {};
+    try {
+      var $link = $imageCell.firstChild;
+      var $image = $link.firstChild;
+      product.title = $image.title;
+      product.url = $link.href;
+      product.id = util.uri(product.url);
+      product.imageUrl = $image.src;
+      product.description = '';
+
+    } catch (e) {
+      return handleError('Failed to parse product');
     }
 
-    var index = dom.array(row.children).indexOf(oldCell);
-    if (index === -1) {
-      return handleError('Cell not found within row');
-    }
+    var $productRow = $imageCell.parentNode;
+    var $compareRow = $productRow.previousElementSibling;
 
-    var compareCell = compareRow.querySelectorAll('td.pgcheck')[index];
+    // get index of current cell to find a cell for toggler
+    var index = dom.array($productRow.children).indexOf($imageCell);
+    var $compareCell = $compareRow.querySelectorAll('td.pgcheck')[index];
 
-    var cell = document.createElement('td');
-    cell.className = 'pgcheck';
+    var $newCell = dom.create('td.pgcheck');
 
-    var id = util.uri(link.href);
-    var isActive = ids.indexOf(id) > -1;
+    // figure out of product is already in cart
+    var isActive = !!~ids.indexOf(product.id);
 
     var toggler = new Toggler({
+      isActive: isActive
+    }, {
       className: 'cmpext',
-      isActive: isActive,
-      data: { toggler: id }
+      dataset: { togglerId: product.id }
     });
+    $newCell.appendChild(toggler.getEl());
 
-    cell.appendChild(toggler.getEl());
+    $compareCell.parentNode.replaceChild($newCell, $compareCell);
 
-    compareCell.parentNode.replaceChild(cell, compareCell);
-  }, this);
-
-  var compareCells = dom.all(document, '.pgcompbtn table td.pgcheck');
-  compareCells.forEach(function (compareCell) {
-
-    var newCell = document.createElement('td');
-    newCell.className = 'pcheck';
-    newCell.appendChild(this.createCompareLink());
-
-    compareCell.parentNode.replaceChild(newCell, compareCell);
+    this.products[product.id] = {
+      data: product,
+      toggler: toggler
+    };
   }, this);
 };
+
+PageGrid.prototype.renderCompareLinks = function () {
+  var $compareCells = dom.all(document, '.pgcompbtn table td.pgcheck');
+  $compareCells.forEach(function ($compareCell) {
+
+    var $newCell = dom.create('td.pcheck');
+    $newCell.appendChild(this.createCompareLink());
+
+    $compareCell.parentNode.replaceChild($newCell, $compareCell);
+  }, this);
+};
+
+PageGrid.prototype.bindListeners = function () {
+  this.$container.addEventListener('click', this.onToggle.bind(this));
+};
+
+// -----------------------------------------------------------------------------
 
 PageGrid.prototype.onToggle = function (e) {
   var toggler = e.target.toggler;
@@ -101,52 +119,31 @@ PageGrid.prototype.onToggle = function (e) {
   e.stopPropagation();
   e.preventDefault();
 
-  var cell = dom.closest(toggler.getEl(), 'td');
-  var product = this.parseProduct(cell);
+  // get product id from the toggler
+  var id = toggler.getEl().dataset.togglerId;
+
+  // find product in the list of parsed products
+  var product = this.products[id];
+  if (!product) { return handleError('Toggled product not found on a page'); }
 
   if (toggler.isActive()) {
-    message.event('remove', product.id, function () {
+    message.event('remove', id, function () {
       toggler.toggle(false);
     });
   } else {
-    message.event('add', product, function () {
+    message.event('add', product.data, function () {
       toggler.toggle(true);
     });
   }
 };
 
-PageGrid.prototype.parseProduct = function (cell) {
-  var row = cell.parentNode;
-  var siblings = dom.all(row, 'td.pgcheck');
-
-  var index = siblings.indexOf(cell);
-
-  var imageRow = row.nextElementSibling;
-  var imageCell = imageRow.children[index];
-  var nameRow = imageRow.nextElementSibling;
-  var nameCell = nameRow.children[index];
-
-  var title = nameCell.querySelector('div.pgname a').innerText;
-  var url = nameCell.querySelector('div.pgname a').href;
-  var imageUrl = imageCell.querySelector('img').src;
-  var id = util.uri(url);
-  var description = '';
-
-  var product = {
-    id: id,
-    url: url,
-    title: title,
-    description: description,
-    imageUrl: imageUrl
-  };
-
-  return product;
-};
-
 PageGrid.prototype.onRemove = function (id) {
-  var target = document.querySelector('[data-toggler="' + id + '"]');
-  if (!target) { return handleError('Removed product not found on a page'); }
-  target.toggler.toggle(false);
+  // find product in a list of parsed products
+  var product = this.products[id];
+  if (!product) {
+    return handleError('Removed product not found on a page');
+  }
+  product.toggler.toggle(false);
 };
 
 module.exports = PageGrid;

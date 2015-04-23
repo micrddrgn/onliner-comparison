@@ -1,45 +1,32 @@
 'use strict';
 
-function Toggler(options) {
-  this.options = {};
-  this.setOptions(options || {});
+var util = require('../helpers/util');
 
-  this.el = this.createEl();
+
+function Toggler(options, attrs) {
+
+  this.options = util.defaults(options || {}, {
+    tagName: 'button',
+    isActive: false,
+    activeClassName: 'active',
+    addContent: '+',
+    addTitle: 'Add',
+    removeContent: '-',
+    removeTitle: 'Remove'
+  });
+
+  this.el = this.createEl(attrs);
   this.toggle(this.options.isActive);
 }
 
-Toggler.prototype.defaults = {
-  tagName: 'button',
-  className: '',
-  isActive: false,
-  activeClassName: 'active',
-  data: {},
-  addContent: '+',
-  addTitle: 'Add',
-  removeContent: '-',
-  removeTitle: 'Remove'
-};
-
-Toggler.prototype.setOptions = function (options) {
-  Object.keys(this.defaults).forEach(function (name) {
-    if (Object.hasOwnProperty.call(options, name)) {
-      this.options[name] = options[name];
-    } else {
-      this.options[name] = this.defaults[name];
-    }
-  }, this);
-};
-
-Toggler.prototype.createEl = function () {
+Toggler.prototype.createEl = function (attrs) {
   var el = document.createElement(this.options.tagName);
-  if (this.options.className) {
-    el.className = this.options.className;
-  }
-  Object.keys(this.options.data).forEach(function (key) {
-    var value = this.options.data[key];
-    el.dataset[key] = value;
-  }, this);
+
+  util.extend(el, attrs || {});
+
+  // add toggler reference to an element
   el.toggler = this;
+
   return el;
 };
 
