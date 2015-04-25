@@ -2,10 +2,9 @@
 
 var util = require('../helpers/util');
 
-
 function Toggler(options, attrs) {
 
-  this.options = util.defaults(options || {}, {
+  this.options = util.extend({
     tagName: 'button',
     isActive: false,
     activeClassName: 'active',
@@ -13,7 +12,7 @@ function Toggler(options, attrs) {
     addTitle: 'Add',
     removeContent: '-',
     removeTitle: 'Remove'
-  });
+  }, options);
 
   this.el = this.createEl(attrs);
   this.toggle(this.options.isActive);

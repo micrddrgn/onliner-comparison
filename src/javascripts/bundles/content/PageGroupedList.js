@@ -92,10 +92,15 @@ PageGroupedList.prototype.parse = function (ids) {
       // create a cell for toggler and replace original cell
       var $togglerCell = dom.create('td.pcheck');
       var toggler = new Toggler({
-        isActive: isActive
+        isActive: isActive,
+        addTitle: 'Добавить все в сравнение',
+        removeTitle: 'Исключить все из сравнения'
       }, {
         className: 'cmpext',
-        dataset: { togglerId: product.id }
+        dataset: {
+          togglerId: product.id,
+          page: 'grouped-list'
+        }
       });
 
       $togglerCell.appendChild(toggler.getEl());
@@ -121,10 +126,17 @@ PageGroupedList.prototype.parse = function (ids) {
     var $newContainer = dom.create('div');
 
     var groupToggler = new Toggler({
-      isActive: isGroupActive
+      isActive: isGroupActive,
+      addContent: '+ Сравнить все',
+      addTitle: 'Добавить все в сравнение',
+      removeContent: '- Исключить все',
+      removeTitle: 'Исключить все из сравнения'
     }, {
       className: 'cmpext-group',
-      dataset: { togglerId: groupId }
+      dataset: {
+        togglerId: groupId,
+        page: 'grouped-list'
+      }
     });
 
     $newContainer.appendChild(groupToggler.getEl());
@@ -152,7 +164,7 @@ PageGroupedList.prototype.renderCompareLinks = function () {
     var $newRow = dom.create('tr');
 
     var $newCompareCell = dom.create('td');
-    $newCompareCell.appendChild(this.createCompareLink());
+    $newCompareCell.appendChild(this.createCompareLink('grouped-list'));
 
     var $newDescCell = $compareRow.lastElementChild.cloneNode(true);
 
@@ -290,7 +302,8 @@ PageGroupedList.prototype.onToggleAll = function (e) {
         toggler.toggle(true);
 
         // now all products from this group are in
-        group.ids.active = group.ids.all;
+        // make copy to avoid references
+        group.ids.active = group.ids.all.slice();
 
       }.bind(this));
 
@@ -318,7 +331,7 @@ PageGroupedList.prototype.onRemove = function (id) {
   }
 
   // untoggle both group and product togglers
-  if (group.ids.active.length === 0) {
+  if (group.ids.active.length < group.ids.all.length) {
     group.toggler.toggle(false);
   }
   product.toggler.toggle(false);

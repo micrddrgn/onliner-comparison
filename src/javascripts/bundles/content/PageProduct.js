@@ -79,8 +79,6 @@ PageProduct.prototype.parse = function (ids) {
         });
       });
     }
-
-
   } catch (e) {
     return handleError('Failed to parse product');
   }
@@ -88,15 +86,21 @@ PageProduct.prototype.parse = function (ids) {
   // figure out if product is already in cart
   var isActive = !!~ids.indexOf(product.id);
 
-  var $rating = document.querySelector('.b-offers-desc__info-rating');
-
   var toggler = new Toggler({
-    isActive: isActive
+    isActive: isActive,
+    addContent: '+ Сравнить',
+    addTitle: 'Добавить в сравнение',
+    removeContent: '- Исключить',
+    removeTitle: 'Исключить из сравнения'
   }, {
     className: 'cmpext',
-    dataset: { togglerId: product.id }
+    dataset: {
+      togglerId: product.id,
+      page: 'product'
+    }
   });
 
+  var $rating = document.querySelector('.b-offers-desc__info-rating');
   $rating.appendChild(toggler.getEl());
 
   this.products[product.id] = {
@@ -107,43 +111,6 @@ PageProduct.prototype.parse = function (ids) {
 
 PageProduct.prototype.bindListeners = function () {
   dom.delegate(this.$container, 'click', '.cmpext', this.onToggle.bind(this));
-};
-
-// -----------------------------------------------------------------------------
-
-PageProduct.prototype.onToggle = function (e) {
-  var toggler = e.target.toggler;
-  if (!toggler) {
-    return true;
-  }
-  e.stopPropagation();
-  e.preventDefault();
-
-  // get product id from the toggler
-  var id = toggler.getEl().dataset.togglerId;
-
-  // find product in the list of parsed products
-  var product = this.products[id];
-  if (!product) { return handleError('Toggled product not found on a page'); }
-
-  if (toggler.isActive()) {
-    message.event('remove', id, function () {
-      toggler.toggle(false);
-    });
-  } else {
-    message.event('add', product.data, function () {
-      toggler.toggle(true);
-    });
-  }
-};
-
-PageProduct.prototype.onRemove = function (id) {
-  // find product in a list of parsed products
-  var product = this.products[id];
-  if (!product) {
-    return handleError('Removed product not found on a page');
-  }
-  product.toggler.toggle(false);
 };
 
 module.exports = PageProduct;

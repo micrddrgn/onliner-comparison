@@ -62,6 +62,15 @@ a:hover {
   margin: -5px 0px 0px 0px;
   border: 1px outset;
   background: #FFFFFF;
+  cursor: pointer;
+}
+
+#products li button.remove:hover {
+  background-color: #FFF4CA;
+}
+
+#products li button.remove:focus {
+  outline: none;
 }
 
 #products li#status {

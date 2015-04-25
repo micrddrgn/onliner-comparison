@@ -1,3 +1,47 @@
+.cmpext-hidden {
+  display: none !important;
+}
+
+/* button */
+
+button[class^="cmpext"],
+.b-offers button[class^="cmpext"] {
+  height: 25px;
+  min-width: 26px;
+  padding: 1px 6px;
+  background: #FFFFFF;
+  cursor: pointer;
+  border: 2px groove;
+  border-color: #35C735;
+  font-size: 11px;
+}
+
+button[class^="cmpext"].active,
+.b-offers button[class^="cmpext"].active {
+  border-color: #F95959;
+}
+
+button[class^="cmpext"]:hover,
+.b-offers button[class^="cmpext"]:hover {
+  background-color: #FFF4CA;
+}
+
+button[class^="cmpext"]:focus,
+.b-offers button[class^="cmpext"]:focus {
+  outline: none;
+}
+
+button[class^="cmpext"][data-page="product"] {
+  margin-left: 25px;
+  margin-top: -3px;
+}
+
+button.cmpext-group[data-page="grouped-list"] {
+  margin-top: 10px;
+}
+
+/* link */
+
 a.cmpext-link {
   width: 56px;
   height: 27px;
@@ -6,6 +50,16 @@ a.cmpext-link {
   background: url(http://catalog.onliner.by/pic/btn_compare.gif);
 }
 
-.cmpext-hidden {
-  display: none !important;
+a.cmpext-link[data-page="list"][data-order="1"] {
+  margin-top: -15px;
+  margin-bottom: 15px;
+}
+
+a.cmpext-link[data-page="list"][data-order="2"] {
+  margin-top: 15px;
+  margin-bottom: -15px;
+}
+
+a.cmpext-link[data-page="grid"] {
+  margin-top: -10px;
 }

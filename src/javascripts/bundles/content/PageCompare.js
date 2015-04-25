@@ -1,18 +1,11 @@
 'use strict';
 
-/*
-  todo:
-  - optimize calling of "parseTable", check for cached ids, if anything should
-    be updated
-  - review the code
- */
-
-var Page = require('./Page');
-
 var dom = require('../../helpers/dom'),
     util = require('../../helpers/util'),
     message = require('../../helpers/message'),
     handleError = require('../../helpers/handleError');
+
+var Page = require('./Page');
 
 function PageCompare() {
   Page.call(this);
@@ -20,18 +13,17 @@ function PageCompare() {
   // detect element that was right-clicked last in comparison table
   // then this element will be used to detect a product column
   // when context menu is invoked
-  this.lastRightClickedEl = null;
+  this.$lastRightClickedEl = null;
 
   this.on('context', this.onContext.bind(this));
-  this.on('remove', this.onRemove.bind(this));
 }
 
 PageCompare.prototype = Object.create(Page.prototype);
 PageCompare.prototype.constructor = PageCompare;
 
-PageCompare.prototype.render = function () {
-  var container = document.querySelector('#compare_column');
-  container.addEventListener('mousedown', this.onRightClick.bind(this));
+PageCompare.prototype.initialize = function () {
+  var $container = document.querySelector('#compare_column');
+  $container.addEventListener('mousedown', this.onRightClick.bind(this));
 
   // table is not in DOM on page load, try grab it a bit later
   var fail = function () {
@@ -44,83 +36,89 @@ PageCompare.prototype.render = function () {
 PageCompare.prototype.onRightClick = function (e) {
   // 2 - right click
   if (e.button === 2) {
-    this.lastRightClickedEl = e.target;
+    this.$lastRightClickedEl = e.target;
   }
 };
 
 PageCompare.prototype.parseTable = function (table) {
-  var products = [];
-
   // ignore first column, because it is not about productc
   var startIndex = 1;
 
-  var tableBody = table.children[0];
-  if (! tableBody) { return handleError('Table body not found'); }
+  var $tableBody = table.children[0];
+  if (!$tableBody) { return handleError('Table body not found'); }
 
-  var rowWithImages = tableBody.children[0],
-      rowWithTitles = tableBody.children[1],
-      rowWithDescriptions = null;
+  var $rowWithImages = $tableBody.children[0],
+      $rowWithTitles = $tableBody.children[1],
+      $rowWithDescriptions = null;
 
   // at least one product should exist
-  if (rowWithImages.children.length <= startIndex) {
+  if ($rowWithImages.children.length <= startIndex) {
     return handleError('No any products');
   }
 
   // get all cells from the first column and
   // try to find a row with descriptions, it may not exist with some products
-  var firstColumnCells = dom.all(tableBody, 'tr td:nth-child(1)');
+  var $firstColumnCells = dom.all($tableBody, 'tr td:nth-child(1)');
 
-  firstColumnCells.forEach(function (cell, index) {
-    if (!cell.parentNode.classList.contains('pdsection')) {
+  $firstColumnCells.forEach(function ($cell, index) {
+    // cell with class .pdsection is just a header of a section
+    if (!$cell.parentNode.classList.contains('pdsection')) {
       return;
     }
 
-    var title = cell.textContent;
+    // all we need is cells in 'основные' section
+    var title = $cell.textContent;
     if (title.toLowerCase() !== 'основные') {
       return;
     }
 
     // index of a cell is the index of the row with descriptions
-    rowWithDescriptions = tableBody.children[index];
+    $rowWithDescriptions = $tableBody.children[index];
   });
 
-  for (var i = startIndex, l = rowWithImages.children.length; i < l; i++) {
-    var cellWithImage = rowWithImages.children[i],
-        cellWithTitle = rowWithTitles.children[i];
+  for (var i = startIndex, l = $rowWithImages.children.length; i < l; i++) {
+    var $cellWithImage = $rowWithImages.children[i],
+        $cellWithTitle = $rowWithTitles.children[i];
 
-    var title = cellWithTitle.querySelector('a').innerHTML;
-    var url = cellWithImage.querySelector('a').href;
-    var imageUrl = cellWithImage.querySelector('img').src;
-    var id = util.uri(url);
-    var description = '';
+    var product = {};
 
-    if (rowWithDescriptions) {
-      description = [];
+    try {
+      product.title = $cellWithTitle.querySelector('a').innerHTML;
+      product.url = $cellWithImage.querySelector('a').href;
+      product.id = util.uri(product.url);
+      product.imageUrl = $cellWithImage.querySelector('img').src;
+      product.description = '';
+    } catch (e) {
+      return handleError('Failed to parse product');
+    }
+
+    if ($rowWithDescriptions) {
+      product.description = [];
 
       // iterate all rows under 'Основные' section until we reach next section
       // intermediate sections contain information
       // on which an original description is based on
-      var currentRow = rowWithDescriptions;
+      var $currentRow = $rowWithDescriptions;
       do {
-        currentRow = currentRow.nextElementSibling;
+        $currentRow = $currentRow.nextElementSibling;
         // if current row is a next section
-        if (currentRow.classList.contains('pdsection')) {
+        if ($currentRow.classList.contains('pdsection')) {
           break;
         }
 
-        var descriptionCell = currentRow.children[i];
+        var $descriptionCell = $currentRow.children[i];
 
         var descriptionValue = null;
         // check if a cell contains a 'positive checkmark'
-        if (descriptionCell.querySelector('img[src$="ico_yes.gif"]')) {
+        if ($descriptionCell.querySelector('img[src$="ico_yes.gif"]')) {
           descriptionValue = true;
         // check if a cell contains a 'negative cross'
-        } else if (descriptionCell.querySelector('img[src$="ico_no.gif"]')) {
+        } else if ($descriptionCell.querySelector('img[src$="ico_no.gif"]')) {
           descriptionValue = false;
         }
 
         // check if a text is a representable information
-        var descriptionText = descriptionCell.textContent.trim();
+        var descriptionText = $descriptionCell.textContent.trim();
         if (descriptionValue === null &&
             (!descriptionText || descriptionText.toLowerCase() === 'нет данных')
         ) {
@@ -128,80 +126,52 @@ PageCompare.prototype.parseTable = function (table) {
         }
 
         // get parameter name for title attribute
-        var descriptionTitle = currentRow.children[0]
+        var descriptionTitle = $currentRow.children[0]
           .querySelector('a:last-child').textContent.trim();
 
-        description.push({
+        product.description.push({
           title: descriptionTitle,
           text: descriptionText,
           value: descriptionValue
         });
-      } while (currentRow);
+      } while ($currentRow);
     }
 
-    var product = {
-      id: id,
-      url: url,
-      title: title,
-      description: description,
-      imageUrl: imageUrl
-    };
-
-    products.push(product);
+    this.products[product.id] = product;
   }
 
   // at least on product should exist
-  if (products.length === 0) {
-    return false;
+  if (util.size(this.products) === 0) {
+    return handleError('No products for reset');
   }
 
-  message.event('reset', products, function () {
+  var data = util.values(this.products);
+  message.event('reset', data, function () {
     // create empty function as a callback to keep conection with event page
   });
 };
 
-PageCompare.prototype.extractIds = function () {
-  // find row with links, consider it to be second one
-  var rowSelector = 'table#rgMasterTable2 tbody tr:nth-child(2)';
-  var rowWithTitles = document.querySelector(rowSelector);
-  if (!rowWithTitles) { return handleError('Row with titles not found'); }
-
-  // collect all products ids, remove first element with slice
-  // because it it a description column
-  var cellsWithTitles = dom.array(rowWithTitles.children).slice(1);
-  var ids = cellsWithTitles.map(function (cell) {
-
-    var link = cell.querySelector('a');
-    if (!link) { return handleError('Some product link was not found'); }
-
-    // extract product id
-    var id = util.uri(link.href);
-    return id;
-  });
-
-  return ids;
-};
-
 PageCompare.prototype.onContext = function () {
-  if (!this.lastRightClickedEl) {
+  if (!this.$lastRightClickedEl) {
     return handleError('No any last right-clicked el');
   }
 
   // get a cell for clicked element
-  var clickedCell = dom.closest(this.lastRightClickedEl, 'td');
-  if (!clickedCell) {
+  var $clickedCell = dom.closest(this.$lastRightClickedEl, 'td', true);
+  if (!$clickedCell) {
     return handleError('No parent td for last right-clicked el');
   }
 
   // get index of this cell in a row
-  var siblingCells = dom.array(clickedCell.parentNode.children);
-  var index = siblingCells.indexOf(clickedCell);
+  var $siblingCells = dom.array($clickedCell.parentNode.children);
+  // subract one because first column is not in count
+  var index = $siblingCells.indexOf($clickedCell) - 1;
   // first column is a list of product attrbiutes
-  if (index === 0) {
+  if (!~index) {
     return handleError('Click on bad column');
   }
 
-  var ids = this.extractIds();
+  var ids = util.keys(this.products);
   // remove element by ids index
   ids.splice(index, 1);
 
@@ -223,11 +193,11 @@ PageCompare.prototype.onContext = function () {
 };
 
 PageCompare.prototype.onRemove = function (id) {
-  var ids = this.extractIds();
+  var ids = util.keys(this.products);
 
   // check if product is on a page
   var index = ids.indexOf(id);
-  if (index === -1) {
+  if (!~index) {
     return handleError('Product is not present');
   }
 
@@ -244,7 +214,6 @@ PageCompare.prototype.onRemove = function (id) {
   } else {
     window.location.href = baseUrl;
   }
-
 };
 
 module.exports = PageCompare;

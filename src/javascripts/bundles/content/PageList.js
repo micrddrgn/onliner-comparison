@@ -62,22 +62,28 @@ PageList.prototype.parse = function (ids) {
     var $newCell = dom.create('td.pcheck');
 
     if (index === 0) {
-      $newCell.appendChild(this.createCompareLink());
+      $newCell.appendChild(this.createCompareLink('list'));
     }
 
     // figure out if product is already in cart
     var isActive = !!~ids.indexOf(product.id);
 
     var toggler = new Toggler({
-      isActive: isActive
+      isActive: isActive,
+      addTitle: 'Добавить в сравнение',
+      removeTitle: 'Исключить из сравнения'
     }, {
       className: 'cmpext',
-      dataset: { togglerId: product.id }
+      dataset: {
+        togglerId: product.id,
+        page: 'list'
+      }
     });
+
     $newCell.appendChild(toggler.getEl());
 
     if (index === $checkCells.length - 1) {
-      $newCell.appendChild(this.createCompareLink());
+      $newCell.appendChild(this.createCompareLink('list'));
     }
 
     $productRow.replaceChild($newCell, $checkCell);
@@ -91,43 +97,6 @@ PageList.prototype.parse = function (ids) {
 
 PageList.prototype.bindListeners = function () {
   this.$container.addEventListener('click', this.onToggle.bind(this));
-};
-
-// -----------------------------------------------------------------------------
-
-PageList.prototype.onToggle = function (e) {
-  var toggler = e.target.toggler;
-  if (!toggler) {
-    return true;
-  }
-  e.stopPropagation();
-  e.preventDefault();
-
-  // get product id from the toggler
-  var id = toggler.getEl().dataset.togglerId;
-
-  // find product in the list of parsed products
-  var product = this.products[id];
-  if (!product) { return handleError('Toggled product not found on a page'); }
-
-  if (toggler.isActive()) {
-    message.event('remove', id, function () {
-      toggler.toggle(false);
-    });
-  } else {
-    message.event('add', product.data, function () {
-      toggler.toggle(true);
-    });
-  }
-};
-
-PageList.prototype.onRemove = function (id) {
-  // find product in a list of parsed products
-  var product = this.products[id];
-  if (!product) {
-    return handleError('Removed product not found on a page');
-  }
-  product.toggler.toggle(false);
 };
 
 module.exports = PageList;

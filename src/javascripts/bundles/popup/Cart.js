@@ -30,31 +30,11 @@ Cart.prototype.template = '' +
     '</a>' +
     '<p>{{description}}</p>' +
     '<button class="remove"' +
-            'title="Исключить товар из списка сравнения">' +
+            'title="Исключить из сравнения">' +
       '&#10006;' +
     '</button>' +
     '<div class="clear"></div>' +
   '</li>';
-
-Cart.prototype.compile = function (data) {
-  // copy template to a variable
-  var html = this.template;
-  // iterate over data keys
-  Object.keys(data).forEach(function (key) {
-    var value = data[key];
-    // create a placeholder pattern for particular key
-    var pattern = new RegExp('{{' + key + '}}', 'gi');
-    // replace globally
-    html = html.replace(pattern, value);
-  });
-  // remove from the template all unused placeholders
-  html = html.replace(/{{.*?}}/gi, '');
-
-  var fragment = document.createElement('div');
-  fragment.innerHTML = html;
-
-  return fragment.firstChild;
-};
 
 Cart.prototype.statuses = {
   empty: 'Товары для сравнения отсутствуют',
@@ -84,7 +64,7 @@ Cart.prototype.add = function (product) {
 
   var description = this.prepareDescription(product.description);
 
-  var $fragment = this.compile({
+  var $fragment = dom.compile(this.template, {
     id: product.id,
     title: product.title,
     url: product.url,

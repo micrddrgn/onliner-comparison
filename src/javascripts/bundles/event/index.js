@@ -1,11 +1,5 @@
 'use strict';
 
-/*
-  TODO
-  handle storage errors
-  use another class name for context
- */
-
 var message = require('../../helpers/message'),
     handleError = require('../../helpers/handleError');
 

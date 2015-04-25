@@ -39,7 +39,6 @@ var pages = {
 
   var pageName = pageDetector.detect();
   if (!pageName) { return handleError('Unable to detect a page:', pageName); }
-  console.log('Page detected: %s', pageName);
 
   if (!Object.hasOwnProperty.call(pages, pageName)) {
     return handleError('Unknown page type: ' + pageName);
@@ -47,24 +46,12 @@ var pages = {
 
   var page = new pages[pageName]();
   if (!page) { return handleError('Failed to create a page'); }
-  console.log('Page created:', page);
 
   page.initialize();
 
+  // just forward messages to a page
   chrome.extension.onMessage.addListener(function (request) {
-    switch(request.action) {
-    case 'remove':
-      page.emit('remove', request.data);
-      break;
-    case 'context':
-      page.emit('context');
-      break;
-    case 'ids':
-      page.emit('ids', request.data);
-      break;
-    default:
-      return false;
-    }
+    page.emit(request.action, request.data);
   });
 
 }());

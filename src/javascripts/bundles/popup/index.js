@@ -1,3 +1,5 @@
+// this script will run any time user opens a popup
+
 'use strict';
 
 var message = require('../../helpers/message');
@@ -6,16 +8,6 @@ var CompareLink = require('../../common/CompareLink');
 
 var Cart = require('./Cart');
 
-// this script will run any time user opens a popup
-
-/*
-  TODO
-
-  comment
-  escape/unecape test
-  truncate
-  rename events
- */
 
 var $list = document.getElementById('products'),
     $status = document.getElementById('status'),

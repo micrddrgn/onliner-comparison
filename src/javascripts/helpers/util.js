@@ -2,6 +2,28 @@
 
 var util = {
 
+  // --- Object utils ---
+
+  size: function(obj) {
+    return Object.keys(obj).length;
+  },
+
+  keys: function (obj) {
+    return Object.keys(obj);
+  },
+
+  values: function (obj) {
+    return Object.keys(obj).map(function (key) {
+      return obj[key];
+    });
+  },
+
+  pluck: function (array, key) {
+    return array.map(function (item) {
+      return item[key];
+    });
+  },
+
   extend: function (dest, source) {
     for (var key in source) {
       if (Object.hasOwnProperty.call(source, key)) {
@@ -13,15 +35,6 @@ var util = {
       }
     }
     return dest;
-  },
-
-  defaults: function (obj, defaults) {
-    for (var key in defaults) {
-      if (!Object.hasOwnProperty.call(obj)) {
-        obj[key] = defaults[key];
-      }
-    }
-    return obj;
   },
 
   pick: function (obj, keys) {
@@ -41,12 +54,9 @@ var util = {
     return values;
   },
 
-  values: function (obj) {
-    return Object.keys(obj).map(function (key) {
-      return obj[key];
-    });
-  },
+  // --- Array utils ---
 
+  // remove from the "source" all "values"
   subtract: function (source, values) {
     var copy = source.slice();
     values.forEach(function (value) {
@@ -58,23 +68,24 @@ var util = {
     return copy;
   },
 
-  pluck: function (array, key) {
-    return array.map(function (item) {
-      return item[key];
-    });
-  },
+  // --- Url utils ---
 
+  // get url part
+  // index - "index" from the end
   uri: function (url, index) {
     index = index || 0;
     var parts = url.split('/').filter(function (n) { return n; });
     return parts[parts.length - 1 - index];
   },
 
+  // cut url
+  // index - without "index" in the end
   cut: function (url, index) {
     index = index || 0;
     var parts = url.split('/').filter(function (n) { return n; });
     return parts.slice(0, parts.length - 1 - index).join('/');
   }
+
 };
 
 module.exports = util;

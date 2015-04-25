@@ -1,14 +1,19 @@
 'use strict';
 
-function CompareLink() {
-  this.el = this.createEl();
+var util = require('../helpers/util');
+
+function CompareLink(attrs) {
+  this.el = this.createEl(attrs);
 }
 
-CompareLink.prototype.createEl = function () {
+CompareLink.prototype.createEl = function (attrs) {
   var a = document.createElement('a');
   a.className = 'cmpext-link';
   a.title = 'Открыть страницу сравнения товаров в новой вкладке';
   a.target = '_blank';
+
+  util.extend(a, attrs || {});
+
   return a;
 };
 

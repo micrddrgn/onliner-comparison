@@ -1,16 +1,11 @@
 'use strict';
 
-/*
-  todo:
-    - parseProduct is called twice to grab all info for remove and add
-      for remove we only need id
- */
-
-var message = require('../../helpers/message');
-
-var EventEmitter = require('../../lib/EventEmitter');
+var message = require('../../helpers/message'),
+    handleError = require('../../helpers/handleError');
 
 var CompareLink = require('../../common/CompareLink');
+
+var EventEmitter = require('../../lib/EventEmitter');
 
 function Page() {
 
@@ -34,8 +29,15 @@ function Page() {
 Page.prototype = Object.create(EventEmitter.prototype);
 Page.prototype.constructor = Page;
 
-Page.prototype.createCompareLink = function () {
-  var compareLink = new CompareLink();
+// -----------------------------------------------------------------------------
+
+Page.prototype.createCompareLink = function (page) {
+  var compareLink = new CompareLink({
+    dataset: {
+      page: page,
+      order: this.compareLinks.length + 1
+    }
+  });
   this.compareLinks.push(compareLink);
   return compareLink.getEl();
 };
@@ -46,27 +48,43 @@ Page.prototype.updateCompareLinksRef = function (ids) {
   });
 };
 
+// -----------------------------------------------------------------------------
+
 Page.prototype.onIds = function (ids) {
   this.updateCompareLinksRef(ids);
 };
 
-Page.prototype.onRemove = function (id) {};
+Page.prototype.onRemove = function (id) {
+  // find product in a list of parsed products
+  var product = this.products[id];
+  if (!product) {
+    return handleError('Removed product not found on a page');
+  }
+  product.toggler.toggle(false);
+};
 
+// toggle should be bind or overridden by a child page
 Page.prototype.onToggle = function (e) {
   var toggler = e.target.toggler;
-  if (!toggler) { return true; }
+  if (!toggler) {
+    return true;
+  }
   e.stopPropagation();
   e.preventDefault();
 
-  var product = this.parseProduct(toggler);
+  // get product id from the toggler
+  var id = toggler.getEl().dataset.togglerId;
+
+  // find product in the list of parsed products
+  var product = this.products[id];
+  if (!product) { return handleError('Toggled product not found on a page'); }
 
   if (toggler.isActive()) {
-    product = this.parseProduct(toggler, true);
-    message.event('remove', product.id, function () {
+    message.event('remove', id, function () {
       toggler.toggle(false);
     });
   } else {
-    message.event('add', product, function () {
+    message.event('add', product.data, function () {
       toggler.toggle(true);
     });
   }

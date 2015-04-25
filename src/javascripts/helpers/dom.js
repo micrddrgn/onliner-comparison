@@ -1,10 +1,5 @@
 'use strict';
 
-/*
-  todo:
-  - fix children, could be better
- */
-
 var dom = {
 
   array: function(arraylike) {
@@ -15,8 +10,12 @@ var dom = {
     return dom.array(node.querySelectorAll(selector));
   },
 
-  closest: function (node, selector) {
-    node = node.parentNode;
+  // "itself" - if true, will start from the element itself
+  //            and return it if it matches
+  closest: function (node, selector, itself) {
+    if (!itself || false) {
+      node = node.parentNode;
+    }
     while(node) {
       if (this.is(node, selector)) {
         return node;
@@ -46,6 +45,8 @@ var dom = {
     node.addEventListener(eventName, handler.bind(this));
   },
 
+  // try to query element over periods of time
+  // then call success or fail callback
   attempt: function (node, selector, delay, attempts, success, fail) {
     var el;
 
@@ -112,6 +113,28 @@ var dom = {
     }
 
     return node;
+  },
+
+  // build a dom fragment from a template
+  // use {{}} for data
+  compile: function (template, data) {
+    // copy template to a variable
+    var html = template;
+    // iterate over data keys
+    Object.keys(data).forEach(function (key) {
+      var value = data[key];
+      // create a placeholder pattern for particular key
+      var pattern = new RegExp('{{' + key + '}}', 'gi');
+      // replace globally
+      html = html.replace(pattern, value);
+    });
+    // remove from the template all unused placeholders
+    html = html.replace(/{{.*?}}/gi, '');
+
+    var fragment = document.createElement('div');
+    fragment.innerHTML = html;
+
+    return fragment.firstChild;
   }
 
 };

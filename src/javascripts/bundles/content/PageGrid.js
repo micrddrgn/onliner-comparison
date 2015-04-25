@@ -78,10 +78,15 @@ PageGrid.prototype.parse = function (ids) {
     var isActive = !!~ids.indexOf(product.id);
 
     var toggler = new Toggler({
-      isActive: isActive
+      isActive: isActive,
+      addTitle: 'Добавить в сравнение',
+      removeTitle: 'Исключить из сравнения'
     }, {
       className: 'cmpext',
-      dataset: { togglerId: product.id }
+      dataset: {
+        togglerId: product.id,
+        page: 'grid'
+      }
     });
     $newCell.appendChild(toggler.getEl());
 
@@ -99,7 +104,7 @@ PageGrid.prototype.renderCompareLinks = function () {
   $compareCells.forEach(function ($compareCell) {
 
     var $newCell = dom.create('td.pcheck');
-    $newCell.appendChild(this.createCompareLink());
+    $newCell.appendChild(this.createCompareLink('grid'));
 
     $compareCell.parentNode.replaceChild($newCell, $compareCell);
   }, this);
@@ -107,43 +112,6 @@ PageGrid.prototype.renderCompareLinks = function () {
 
 PageGrid.prototype.bindListeners = function () {
   this.$container.addEventListener('click', this.onToggle.bind(this));
-};
-
-// -----------------------------------------------------------------------------
-
-PageGrid.prototype.onToggle = function (e) {
-  var toggler = e.target.toggler;
-  if (!toggler) {
-    return true;
-  }
-  e.stopPropagation();
-  e.preventDefault();
-
-  // get product id from the toggler
-  var id = toggler.getEl().dataset.togglerId;
-
-  // find product in the list of parsed products
-  var product = this.products[id];
-  if (!product) { return handleError('Toggled product not found on a page'); }
-
-  if (toggler.isActive()) {
-    message.event('remove', id, function () {
-      toggler.toggle(false);
-    });
-  } else {
-    message.event('add', product.data, function () {
-      toggler.toggle(true);
-    });
-  }
-};
-
-PageGrid.prototype.onRemove = function (id) {
-  // find product in a list of parsed products
-  var product = this.products[id];
-  if (!product) {
-    return handleError('Removed product not found on a page');
-  }
-  product.toggler.toggle(false);
 };
 
 module.exports = PageGrid;
