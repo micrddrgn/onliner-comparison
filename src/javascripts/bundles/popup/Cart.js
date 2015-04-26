@@ -80,7 +80,7 @@ Cart.prototype.add = function (product) {
 
 Cart.prototype.remove = function (id) {
   var index = this.ids.indexOf(id);
-  if (index === -1) {
+  if (!~index) {
     return false;
   }
   this.ids.splice(index, 1);
