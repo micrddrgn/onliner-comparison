@@ -117,7 +117,8 @@ PageGroupedList.prototype.parse = function (ids) {
     }, this);
 
     // figure out if products of current group are all in cart
-    var isGroupActive = (groupIds.length > 0 &&
+    var hasConfigurations = (groupIds.length > 0);
+    var isGroupActive = (hasConfigurations &&
                          groupIds.length === groupActiveIds.length);
 
     // grab product (group) checkbox container
@@ -127,17 +128,41 @@ PageGroupedList.prototype.parse = function (ids) {
 
     var groupToggler = new Toggler({
       isActive: isGroupActive,
-      addContent: '+ Сравнить все',
-      addTitle: 'Добавить все в сравнение',
-      removeContent: '- Исключить все',
-      removeTitle: 'Исключить все из сравнения'
+      addContent: hasConfigurations ? '+ Сравнить все' : '+',
+      addTitle: 'Добавить в сравнение',
+      removeContent: hasConfigurations ? '- Исключить все' : '-',
+      removeTitle: 'Исключить из сравнения'
     }, {
-      className: 'cmpext-group',
+      className: hasConfigurations ? 'cmpext-group' : 'cmpext-single',
       dataset: {
         togglerId: groupId,
         page: 'grouped-list'
       }
     });
+
+    // if product does not have configurations - disable it
+    if (!hasConfigurations) {
+      var product = {};
+      try {
+        var $pdescr = $productRow.querySelector('td.pdescr');
+        var $link = $pdescr.querySelector('strong.pname a');
+        product.title = $link.innerText;
+        product.url = $link.href;
+        product.id = util.uri(product.url);
+        product.imageUrl = $imageCell.querySelector('img').src;
+        product.description = $pdescr.querySelector('div').innerText
+                                .replace(', подробнее...', '');
+      } catch (e) {
+        return handleError('Failed to parse product');
+      }
+
+      // add product and it's toggler to current page product map
+      this.products[product.id] = {
+        data: product,
+        toggler: groupToggler,
+        groupId: groupId
+      };
+    }
 
     $newContainer.appendChild(groupToggler.getEl());
     $imageCell.replaceChild($newContainer, $checkboxContainer);
@@ -177,6 +202,9 @@ PageGroupedList.prototype.renderCompareLinks = function () {
 
 PageGroupedList.prototype.bindListeners = function () {
   dom.delegate(this.$container, 'click', '.cmpext',
+               this.onToggle.bind(this));
+
+  dom.delegate(this.$container, 'click', '.cmpext-single',
                this.onToggle.bind(this));
 
   dom.delegate(this.$container, 'click', '.cmpext-group',

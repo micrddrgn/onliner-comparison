@@ -31,12 +31,19 @@ button[class^="cmpext"]:focus,
   outline: none;
 }
 
+button[class^="cmpext"][disabled] {
+  color: #A9A9A9;
+  background: #E8E8E8;
+  border-color: #FFFAFA;
+}
+
 button[class^="cmpext"][data-page="product"] {
   margin-left: 25px;
   margin-top: -3px;
 }
 
-button.cmpext-group[data-page="grouped-list"] {
+button.cmpext-group[data-page="grouped-list"],
+button.cmpext-single[data-page="grouped-list"] {
   margin-top: 10px;
 }
 
