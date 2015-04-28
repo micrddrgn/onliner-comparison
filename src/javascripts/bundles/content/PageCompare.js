@@ -29,7 +29,7 @@ PageCompare.prototype.initialize = function () {
   var fail = function () {
     handleError('Attempt failed to grab #rgMasterTable2');
   };
-  dom.attempt(document, '#rgMasterTable2', 300, 5,
+  dom.attempt(document, '#rgMasterTable2', 1000, 5,
               this.parseTable.bind(this), fail);
 };
 
@@ -126,8 +126,12 @@ PageCompare.prototype.parseTable = function (table) {
         }
 
         // get parameter name for title attribute
-        var descriptionTitle = $currentRow.children[0]
-          .querySelector('a:last-child').textContent.trim();
+        var $descriptionTitleLink = $currentRow.children[0]
+                                    .querySelector('a:last-child');
+        if (!$descriptionTitleLink) {
+          continue;
+        }
+        var descriptionTitle = $descriptionTitleLink.textContent.trim();
 
         product.description.push({
           title: descriptionTitle,
@@ -135,6 +139,11 @@ PageCompare.prototype.parseTable = function (table) {
           value: descriptionValue
         });
       } while ($currentRow);
+    }
+
+    // do not replace original product with empty description
+    if (typeof product.description === 'string' && !product.description) {
+      continue;
     }
 
     this.products[product.id] = product;
