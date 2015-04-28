@@ -84,6 +84,17 @@ var util = {
     index = index || 0;
     var parts = url.split('/').filter(function (n) { return n; });
     return parts.slice(0, parts.length - 1 - index).join('/');
+  },
+
+  // --- String utils ---
+
+  ellipsize: function (string, n, ellipse) {
+    ellipse = ellipse || '…';
+    if (string.length <= n) {
+      return string;
+    }
+    console.log(string);
+    return string.substring(0, n - ellipse.length) + ellipse;
   }
 
 };

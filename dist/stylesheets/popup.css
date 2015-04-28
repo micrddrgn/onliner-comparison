@@ -38,10 +38,6 @@ a:hover {
   border-bottom: 1px solid #CCC;
 }
 
-#products li a span {
-  padding-left: 3px;
-}
-
 #products li div.image {
   width: 80px;
   max-height: 80px;

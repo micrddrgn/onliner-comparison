@@ -1,5 +1,7 @@
 'use strict';
 
+var util = require('./util');
+
 var dom = {
 
   array: function(arraylike) {
@@ -115,26 +117,80 @@ var dom = {
     return node;
   },
 
-  // build a dom fragment from a template
-  // use {{}} for data
-  compile: function (template, data) {
-    // copy template to a variable
-    var html = template;
-    // iterate over data keys
-    Object.keys(data).forEach(function (key) {
-      var value = data[key];
-      // create a placeholder pattern for particular key
-      var pattern = new RegExp('{{' + key + '}}', 'gi');
-      // replace globally
-      html = html.replace(pattern, value);
-    });
-    // remove from the template all unused placeholders
-    html = html.replace(/{{.*?}}/gi, '');
+  template: {
 
-    var fragment = document.createElement('div');
-    fragment.innerHTML = html;
+    parseExpr: function (expr, context) {
+      var filters = [],
+          value = '',
+          args,
+          method;
 
-    return fragment.firstChild;
+      if (expr.indexOf('|') !== -1) {
+        filters = expr.split('|');
+        expr = filters.shift();
+      }
+
+      if (!Object.hasOwnProperty.call(context, expr)) {
+        return '';
+      }
+
+      value = context[expr];
+
+      filters.forEach(function (filter) {
+        args = filter.split(':');
+        method = args.shift();
+        if (Object.hasOwnProperty.call(util, method)) {
+          value = util[method].apply(util, [value].concat(args));
+        }
+      });
+
+      return value;
+    },
+
+    compile: function (text, context, options) {
+      options = util.extend({
+        startSymbol: '{{',
+        endSymbol: '}}'
+      }, options);
+
+      var startIndex,
+          endIndex,
+          index = 0,
+          textLength = text.length,
+          expr,
+          parsed,
+          startSymbolLength = options.startSymbol.length,
+          endSymbolLength = options.endSymbol.length;
+
+      while (index < textLength) {
+        startIndex = text.indexOf(options.startSymbol, index);
+        if (startIndex !== -1) {
+          endIndex = text.indexOf(options.endSymbol, startIndex +
+                                  startSymbolLength);
+          if (endIndex !== -1) {
+            expr = text.substring(startIndex + startSymbolLength, endIndex);
+            parsed = this.parseExpr(expr, context);
+
+            text = text.substring(0, startIndex) +
+                   parsed +
+                   text.substring(endIndex + endSymbolLength, text.length - 1);
+
+            index = endIndex + endSymbolLength - expr.length + parsed.length;
+            textLength = textLength - expr.length + parsed.length;
+          } else {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+
+      var fragment = document.createElement('div');
+      fragment.innerHTML = text;
+
+      return fragment.firstChild;
+    }
+
   }
 
 };

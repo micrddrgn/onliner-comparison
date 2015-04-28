@@ -25,8 +25,7 @@ Cart.prototype.template = '' +
     '<a href="{{url}}" ' +
         'target="_blank" ' +
         'title="{{title}} - откроется в новой вкладке">' +
-      '<i class="icon-new-tab"></i>' +
-      '<span>{{title}}</span>' +
+      '<span>{{title|ellipsize:28}}</span>' +
     '</a>' +
     '<p>{{description}}</p>' +
     '<button class="remove"' +
@@ -64,7 +63,7 @@ Cart.prototype.add = function (product) {
 
   var description = this.prepareDescription(product.description);
 
-  var $fragment = dom.compile(this.template, {
+  var $fragment = dom.template.compile(this.template, {
     id: product.id,
     title: product.title,
     url: product.url,
