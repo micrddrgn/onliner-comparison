@@ -25,12 +25,20 @@ PageCompare.prototype.initialize = function () {
   var $container = document.querySelector('#compare_column');
   $container.addEventListener('mousedown', this.onRightClick.bind(this));
 
-  // table is not in DOM on page load, try grab it a bit later
-  var fail = function () {
-    handleError('Attempt failed to grab #rgMasterTable2');
-  };
-  dom.attempt(document, '#rgMasterTable2', 1000, 5,
-              this.parseTable.bind(this), fail);
+  message.event('ids', function (ids) {
+    var that = this;
+
+    var success = function (table) {
+      that.parseTable.call(that, table, ids);
+    };
+
+    var fail = function () {
+      handleError('Attempt failed to grab #rgMasterTable2');
+    };
+
+    // table is not in DOM on page load, try grab it a bit later
+    dom.attempt(document, '#rgMasterTable2', 1000, 5, success, fail);
+  }.bind(this));
 };
 
 PageCompare.prototype.onRightClick = function (e) {
@@ -40,7 +48,7 @@ PageCompare.prototype.onRightClick = function (e) {
   }
 };
 
-PageCompare.prototype.parseTable = function (table) {
+PageCompare.prototype.parseTable = function (table, ids) {
   // ignore first column, because it is not about productc
   var startIndex = 1;
 
@@ -55,6 +63,8 @@ PageCompare.prototype.parseTable = function (table) {
   if ($rowWithImages.children.length <= startIndex) {
     return handleError('No any products');
   }
+
+  var productsToReset = [];
 
   // get all cells from the first column and
   // try to find a row with descriptions, it may not exist with some products
@@ -92,6 +102,8 @@ PageCompare.prototype.parseTable = function (table) {
       return handleError('Failed to parse product');
     }
 
+    this.products[product.id] = product;
+
     if ($rowWithDescriptions) {
       product.description = [];
 
@@ -103,7 +115,7 @@ PageCompare.prototype.parseTable = function (table) {
         $currentRow = $currentRow.nextElementSibling;
         // if current row is a next section
         if ($currentRow.classList.contains('pdsection')) {
-          break;
+          break; // do while
         }
 
         var $descriptionCell = $currentRow.children[i];
@@ -122,14 +134,14 @@ PageCompare.prototype.parseTable = function (table) {
         if (descriptionValue === null &&
             (!descriptionText || descriptionText.toLowerCase() === 'нет данных')
         ) {
-          continue;
+          continue; // do while
         }
 
         // get parameter name for title attribute
         var $descriptionTitleLink = $currentRow.children[0]
                                     .querySelector('a:last-child');
         if (!$descriptionTitleLink) {
-          continue;
+          continue; // do while
         }
         var descriptionTitle = $descriptionTitleLink.textContent.trim();
 
@@ -142,20 +154,20 @@ PageCompare.prototype.parseTable = function (table) {
     }
 
     // do not replace original product with empty description
-    if (typeof product.description === 'string' && !product.description) {
-      continue;
+    // !product.description.toString() - return false for empty array and string
+    if (ids.indexOf(product.id) !== -1 && !product.description.toString()) {
+      continue; // for
     }
 
-    this.products[product.id] = product;
+    productsToReset.push(product);
   }
 
   // at least on product should exist
-  if (util.size(this.products) === 0) {
+  if (productsToReset.length === 0) {
     return handleError('No products for reset');
   }
 
-  var data = util.values(this.products);
-  message.event('reset', data, function () {
+  message.event('reset', productsToReset, function () {
     // create empty function as a callback to keep conection with event page
   });
 };
