@@ -12,6 +12,13 @@ CompareLink.prototype.createEl = function (attrs) {
   a.title = 'Открыть страницу сравнения товаров в новой вкладке';
   a.target = '_blank';
 
+  attrs = attrs || {};
+  // workaround read-only dataset property
+  if (attrs.dataset) {
+    util.extend(a.dataset, attrs.dataset);
+    delete attrs.dataset;
+  }
+
   util.extend(a, attrs || {});
 
   return a;

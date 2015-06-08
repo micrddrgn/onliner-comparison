@@ -21,6 +21,13 @@ function Toggler(options, attrs) {
 Toggler.prototype.createEl = function (attrs) {
   var el = document.createElement(this.options.tagName);
 
+  attrs = attrs || {};
+  // workaround read-only dataset property
+  if (attrs.dataset) {
+    util.extend(el.dataset, attrs.dataset);
+    delete attrs.dataset;
+  }
+
   util.extend(el, attrs || {});
 
   // add toggler reference to an element

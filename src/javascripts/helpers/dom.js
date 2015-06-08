@@ -2,10 +2,14 @@
 
 var util = require('./util');
 
+var Observer = window.MutationObserver || window.WebKitMutationObserver;
+
+var arraySlice = Array.prototype.slice;
+
 var dom = {
 
-  array: function(arraylike) {
-    return Array.prototype.slice.call(arraylike);
+  array: function(nodes) {
+    return arraySlice.call(nodes);
   },
 
   all: function (node, selector) {
@@ -27,14 +31,27 @@ var dom = {
     return null;
   },
 
-  is: function (node, selector) {
-    if ((selector[0] === '.' && node.classList.contains(selector.slice(1))) ||
-      (selector[0] === '#' && node.id === selector.slice(1)) ||
-      (node.tagName === selector.toUpperCase())
-    ) {
-      return true;
+  is: function (node) {
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return false;
     }
-    return false;
+
+    var selectors = arraySlice.call(arguments, 1);
+    var is = true;
+
+    selectors.forEach(function (selector) {
+      var isClass = selector[0] === '.' &&
+                    node.classList.contains(selector.slice(1));
+      var isId = selector[0] === '#' && node.id === selector.slice(1);
+      var isTag = node.tagName === selector.toUpperCase();
+
+      if (! (isClass || isId || isTag)) {
+        is = false;
+      }
+    });
+
+    return is;
   },
 
   delegate: function (node, eventName, selector, cb) {
@@ -115,6 +132,38 @@ var dom = {
     }
 
     return node;
+  },
+
+  onChildAdd: function (selector, selectors, callback) {
+    var found = null, that = this;
+    var observer = new Observer(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (!mutation.addedNodes.length) { return; }
+        var addedNodes = that.array(mutation.addedNodes);
+        addedNodes.forEach(function (addedNode) {
+          if (that.is.apply(that, [addedNode].concat(selectors))) {
+            found = addedNode;
+          }
+        });
+
+        if (found === null) { return callback(null); }
+      });
+
+      if (found === null) { return callback(null); }
+
+      callback(found);
+    });
+
+    var node = selector;
+    if (typeof selector === 'string') {
+      node = document.querySelector(selector);
+    }
+
+    observer.observe(node, {
+      childList: true
+    });
+
+    return observer;
   },
 
   template: {

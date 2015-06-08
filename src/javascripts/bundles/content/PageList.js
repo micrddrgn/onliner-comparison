@@ -24,15 +24,23 @@ PageList.prototype.initialize = function () {
     return handleError('Container [name="product_list"] not found');
   }
 
-  message.event('ids', function (ids) {
+  var that = this;
 
-    this.parse(ids);
+  var inject = function () {
+    message.event('ids', function (ids) {
+      that.parse(ids);
+      that.updateCompareLinksRef(ids);
+      that.bindListeners();
+    });
+  };
 
-    this.updateCompareLinksRef(ids);
+  var childSelector = ['table', '.schema-products'];
+  dom.onChildAdd(this.$container, childSelector, function (found) {
+    if (!found) { return; }
+    inject();
+  });
 
-    this.bindListeners();
-
-  }.bind(this));
+  inject();
 };
 
 // -----------------------------------------------------------------------------
@@ -66,7 +74,7 @@ PageList.prototype.parse = function (ids) {
     }
 
     // figure out if product is already in cart
-    var isActive = !!~ids.indexOf(product.id);
+    var isActive = ids.indexOf(product.id) !== -1;
 
     var toggler = new Toggler({
       isActive: isActive,

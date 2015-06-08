@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Onliner - сравнение товаров",
   "description": "Упрощенное сравнение товаров на сайте catalog.onliner.by",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "icons": {
     "16": "images/icons/16.png",
     "48": "images/icons/48.png",

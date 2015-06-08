@@ -25,15 +25,13 @@ var util = {
   },
 
   extend: function (dest, source) {
-    for (var key in source) {
-      if (Object.hasOwnProperty.call(source, key)) {
-        if (source[key].toString() === '[object Object]') {
-          dest[key] = this.extend(dest[key], source[key]);
-        } else {
-          dest[key] = source[key];
-        }
-      }
-    }
+    dest = dest || {};
+    source = source || {};
+
+    Object.keys(source).forEach(function (key) {
+      dest[key] = source[key];
+    });
+
     return dest;
   },
 
@@ -68,6 +66,14 @@ var util = {
     return copy;
   },
 
+  // --- Collection utils
+
+  findWhere: function (collection, key, value) {
+    return collection.filter(function (item) {
+      return item[key] === value;
+    });
+  },
+
   // --- Url utils ---
 
   // get url part
@@ -93,7 +99,6 @@ var util = {
     if (string.length <= n) {
       return string;
     }
-    console.log(string);
     return string.substring(0, n - ellipse.length) + ellipse;
   }
 

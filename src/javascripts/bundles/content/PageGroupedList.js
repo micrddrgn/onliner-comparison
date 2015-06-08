@@ -26,22 +26,31 @@ PageGroupedList.prototype.initialize = function () {
     return handleError('Container [name="product_list"] not found');
   }
 
-  message.event('ids', function (ids) {
+  var that = this;
 
-    this.parse(ids);
+  var inject = function () {
+    message.event('ids', function (ids) {
+      that.parse(ids);
+      that.renderCompareLinks();
+      that.updateCompareLinksRef(ids);
+      that.bindListeners();
+    });
+  };
 
-    this.renderCompareLinks();
+  var childSelector = ['table', '.schema-products'];
+  dom.onChildAdd(this.$container, childSelector, function (found) {
+    if (!found) { return; }
+    inject();
+  });
 
-    this.updateCompareLinksRef(ids);
-
-    this.bindListeners();
-
-  }.bind(this));
+  inject();
 };
 
 // -----------------------------------------------------------------------------
 
 PageGroupedList.prototype.parse = function (ids) {
+  var startTime = Date.now();
+
   // iterate over all product groups
   var $imageCells = dom.all(this.$container, 'table tr td.pimage');
   $imageCells.forEach(function ($imageCell) {
@@ -124,6 +133,9 @@ PageGroupedList.prototype.parse = function (ids) {
     // grab product (group) checkbox container
     // to replace it with group toggler
     var $checkboxContainer = $imageCell.children[1];
+    if (!$checkboxContainer) {
+      return handleError('No image checkbox container');
+    }
     var $newContainer = dom.create('div');
 
     var groupToggler = new Toggler({
@@ -177,26 +189,23 @@ PageGroupedList.prototype.parse = function (ids) {
     };
 
   }, this);
+
+  var endTime = Date.now();
+
+  console.log('Duration', endTime - startTime);
 };
 
 PageGroupedList.prototype.renderCompareLinks = function () {
-  var $compareRows = dom.all(this.$container, 'div.pcompbtn > table tr');
+  var $compareBlocks = dom.all(this.$container, 'div.pcompbtn');
 
   // because original compare buttons are weirdly placed
   // hide some stuff to make our compare buttons look nice
-  $compareRows.forEach(function ($compareRow) {
+  $compareBlocks.forEach(function ($compareBlock) {
 
-    var $newRow = dom.create('tr');
+    var $newBlock = dom.create('div.pcompbtn');
+    $newBlock.appendChild(this.createCompareLink('grouped-list'));
 
-    var $newCompareCell = dom.create('td');
-    $newCompareCell.appendChild(this.createCompareLink('grouped-list'));
-
-    var $newDescCell = $compareRow.lastElementChild.cloneNode(true);
-
-    $newRow.appendChild($newCompareCell);
-    $newRow.appendChild($newDescCell);
-
-    $compareRow.parentNode.replaceChild($newRow, $compareRow);
+    $compareBlock.parentNode.replaceChild($newBlock, $compareBlock);
   }, this);
 };
 
